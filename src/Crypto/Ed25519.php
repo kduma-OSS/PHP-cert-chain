@@ -7,9 +7,6 @@ use SodiumException;
 
 class Ed25519
 {
-    /**
-     * @throws SodiumException
-     */
     public static function makeKeyPair(): PrivateKeyPair
     {
         $key_pair = sodium_crypto_sign_keypair();
