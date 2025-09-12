@@ -129,3 +129,34 @@ From here, the structure **branches** depending on `AlgVer`.
 - KeyId derivation must still map to `SHA-256(PubKey)[0..15]` (or vendor-defined truncation).
 
 ---
+
+
+---
+
+## Chain packaging (concatenation format)
+
+To allow distributing an entire trust path as **one Base64 string**, a certificate may be followed **immediately** by another full certificate structure (starting again at **Magic**). You can therefore concatenate the whole trust tree (leaf → … → root) into one binary blob and **Base64‑encode the entire concatenation as a single string** (no separators).
+
+### Encoding rules
+- Each element is a complete **Certificate** as specified for the chosen `AlgVer`.
+- Concatenate certificates **in order from leaf to root**. The final element SHOULD be a **Root CA** (`0x0001`) and MUST be self‑signed.
+- After concatenation, **Base64‑encode the entire byte sequence** (standard Base64, no line breaks).
+- This container is purely a packaging convenience; cryptographic validity is still per‑certificate.
+
+### Parsing rules
+- Decode Base64 once to obtain the binary blob.
+- Starting at offset 0, parse a **Certificate**. Its **length** is determinable from its internal fields (notably `DescLen`, `UserDescCount` block, `SigCount`, and, for vendor mode, explicit length fields).
+- After finishing one certificate, **if there are remaining bytes**, the next byte MUST be `Magic` (`08 44 53`), and parsing continues for the next certificate.
+- Continue until the end of the byte array. Reject if trailing bytes remain that do not begin with `Magic` or if any certificate is malformed.
+
+### Validation
+- Build chains using the **SignKeyId → KeyId** linkage between adjacent certificates. When a concatenated parent is present, it **must** match the `SignKeyId` of the child and validate per signature and policy rules.
+- If a required issuer is **not** present in the concatenation, the validator MAY resolve it from a local trust store; however, when present, the concatenated parent MUST be used and must validate.
+- All existing **policy rules** apply (self‑signed roots for `0x0001`, `CA` requirement to issue, subset‑of‑flags, end‑entity authorization, etc.).
+
+### ABNF update
+```
+CertificateChain = 1*Certificate        ; one or more Certificates back-to-back
+; Each Certificate is defined as previously for AlgVer = 0x01 or 0xF1
+; The entire CertificateChain is Base64-encoded when transported as text.
+```
