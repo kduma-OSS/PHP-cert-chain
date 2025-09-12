@@ -17,6 +17,11 @@ readonly class PrivateKeyPair extends PublicKey
         parent::__construct($id, $publicKey);
     }
 
+    public function toPublicKey(): PublicKey
+    {
+        return new PublicKey($this->id, $this->publicKey);
+    }
+
 
     public function toArray(): array
     {

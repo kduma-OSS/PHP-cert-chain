@@ -11,9 +11,9 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PublicKey::class)]
 class PublicKeyTest extends TestCase
 {
-    const string KEY_ID_HEX = '4773d12e2371bb935b9a0f5439b4a1c3';
-    const string PUBLIC_KEY_HEX = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff';
-    const string BINARY_B64 = "PubKEEdz0S4jcbuTW5oPVDm0ocMAIAARIjNEVWZ3iJmqu8zd7v8AESIzRFVmd4iZqrvM3e7/";
+    const string KEY_ID_HEX = 'a503e0452f4d3a8539c791b0e958069d';
+    const string PUBLIC_KEY_HEX = '6ba8dfa86878b025e49d9858b66b20e5a89e96d9c656a989eec09f5d776ad593';
+    const string BINARY_B64 = "PubKEKUD4EUvTTqFOceRsOlYBp0AIGuo36hoeLAl5J2YWLZrIOWonpbZxlapie7An113atWT";
 
     private PublicKey $key;
 

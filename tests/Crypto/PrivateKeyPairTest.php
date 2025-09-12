@@ -12,10 +12,10 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PrivateKeyPair::class)]
 class PrivateKeyPairTest extends TestCase
 {
-    const string KEY_ID_HEX = '4773d12e2371bb935b9a0f5439b4a1c3';
-    const string PUBLIC_KEY_HEX = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff';
-    const string PRIVATE_KEY_HEX = 'ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100';
-    const string BINARY_B64 = "PrivateKEEdz0S4jcbuTW5oPVDm0ocMAIAARIjNEVWZ3iJmqu8zd7v8AESIzRFVmd4iZqrvM3e7/ACD/7t3Mu6qZiHdmVUQzIhEA/+7dzLuqmYh3ZlVEMyIRAA==";
+    const string KEY_ID_HEX = 'a503e0452f4d3a8539c791b0e958069d';
+    const string PUBLIC_KEY_HEX = '6ba8dfa86878b025e49d9858b66b20e5a89e96d9c656a989eec09f5d776ad593';
+    const string PRIVATE_KEY_HEX = 'b57cddc66aa709b4a58d920998ad0c95da6e807671024855687a0ff5d86491dc6ba8dfa86878b025e49d9858b66b20e5a89e96d9c656a989eec09f5d776ad593';
+    const string BINARY_B64 = "PrivateKEKUD4EUvTTqFOceRsOlYBp0AIGuo36hoeLAl5J2YWLZrIOWonpbZxlapie7An113atWTAEC1fN3GaqcJtKWNkgmYrQyV2m6AdnECSFVoeg/12GSR3Guo36hoeLAl5J2YWLZrIOWonpbZxlapie7An113atWT";
 
     private PublicKey $key;
 
@@ -91,7 +91,18 @@ class PrivateKeyPairTest extends TestCase
             PrivateKeyPair::fromBinary(BinaryString::fromBase64(substr(self::BINARY_B64, 0, -4)));
             $this->fail("Expected exception not thrown");
         } catch (\InvalidArgumentException $exception) {
-            $this->assertEquals('Failed to parse PrivateKey: Unexpected end of data while reading 32 bytes', $exception->getMessage());
+            $this->assertEquals('Failed to parse PrivateKey: Unexpected end of data while reading 64 bytes', $exception->getMessage());
         }
+    }
+
+    public function testToPublicKey()
+    {
+        $this->assertEquals(
+            new PublicKey(
+                id: KeyId::fromHex(self::KEY_ID_HEX),
+                publicKey: BinaryString::fromHex(self::PUBLIC_KEY_HEX)
+            ),
+            $this->key->toPublicKey()
+        );
     }
 }
