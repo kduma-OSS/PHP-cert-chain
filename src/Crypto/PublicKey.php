@@ -44,6 +44,6 @@ readonly class PublicKey
         $writer->writeBytesWithLength($this->id);
         $writer->writeBytesWithLength($this->publicKey, true);
 
-        return new BinaryString($writer->getBinary());
+        return $writer->getBuffer();
     }
 }
