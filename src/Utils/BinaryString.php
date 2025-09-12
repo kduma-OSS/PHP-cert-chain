@@ -1,0 +1,50 @@
+<?php
+
+namespace KDuma\CertificateChainOfTrust\Utils;
+
+readonly class BinaryString
+{
+    public function __construct(public string $value)
+    {
+    }
+
+    public function toString(): string
+    {
+        return $this->value;
+    }
+
+    public function toHex(): string
+    {
+        return bin2hex($this->value);
+    }
+
+    public function toBase64(): string
+    {
+        return base64_encode($this->value);
+    }
+
+    public function size(): int
+    {
+        return strlen($this->value);
+    }
+
+    public static function fromString(string $value): self
+    {
+        return new self($value);
+    }
+
+    public static function fromHex(string $hex): static
+    {
+        return new static(hex2bin($hex));
+    }
+
+    public static function fromBase64(string $base64): static
+    {
+        return new static(base64_decode($base64, true));
+    }
+
+    public function equals(BinaryString $other): bool
+    {
+        return hash_equals($this->value, $other->value);
+    }
+}
