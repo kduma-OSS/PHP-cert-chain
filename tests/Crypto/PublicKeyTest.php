@@ -75,4 +75,34 @@ class PublicKeyTest extends TestCase
             $this->publicKey
         );
     }
+
+    public function testFromBinary()
+    {
+        $reconstructedPublicKey = PublicKey::fromBinary(BinaryString::fromBase64(self::BINARY_B64));
+        $this->assertEquals(
+            $reconstructedPublicKey,
+            $this->publicKey
+        );
+
+        try {
+            PublicKey::fromBinary(BinaryString::fromBase64('PubXAAAA'));
+            $this->fail("Expected exception not thrown");
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertEquals('Invalid magic bytes for PublicKey', $exception->getMessage());
+        }
+
+        try {
+            PublicKey::fromBinary(BinaryString::fromBase64(self::BINARY_B64.'PubXAAAA'));
+            $this->fail("Expected exception not thrown");
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertEquals('Extra data found after parsing PublicKey', $exception->getMessage());
+        }
+
+        try {
+            PublicKey::fromBinary(BinaryString::fromBase64(substr(self::BINARY_B64, 0, -1)));
+            $this->fail("Expected exception not thrown");
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertEquals('Failed to parse PublicKey: Unexpected end of data while reading 32 bytes', $exception->getMessage());
+        }
+    }
 }
