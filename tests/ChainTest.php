@@ -66,4 +66,82 @@ class ChainTest extends TestCase
         $this->assertCount(4, $chain->certificates);
         $this->assertEquals($reader->length, $reader->position);
     }
+
+    public function testGetCertificate()
+    {
+        $chain = Chain::fromBinary(BinaryString::fromBase64(self::EXAMPLE_1));
+        $this->assertCount(4, $chain->certificates);
+
+        $certificate = $chain->getCertificate();
+        $this->assertInstanceOf(Certificate::class, $certificate);
+        $this->assertEquals(self::EXAMPLE_CERTS[0], $certificate->toBinary()->toBase64());
+
+        $emptyChain = new Chain([]);
+        $this->assertNull($emptyChain->getCertificate());
+    }
+
+
+    public function testBuildPaths()
+    {
+        $chain = new Chain([
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[0])),
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[1])),
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[2])),
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[3])),
+        ]);
+
+        $paths = $chain->buildPaths($chain->certificates[1]);
+        $this->assertCount(1, $paths);
+        $this->assertCount(3, $paths[0]);
+
+        $this->assertEquals('1e020070be2d290b9d0d495ba8bba4d4', $paths[0][0]->key->id->toHex());
+        $this->assertEquals('e356e39340cb7844ce2203ee5bc2b1f6', $paths[0][1]->key->id->toHex());
+        $this->assertEquals('58d132295cbb57fed93bf52f86fa809d', $paths[0][2]->key->id->toHex());
+
+        $paths = $chain->buildPaths();
+        $this->assertCount(1, $paths);
+        $this->assertCount(4, $paths[0]);
+
+        $this->assertEquals('cbeacdc09617e3e5b7dd20f77640195e', $paths[0][0]->key->id->toHex());
+        $this->assertEquals('1e020070be2d290b9d0d495ba8bba4d4', $paths[0][1]->key->id->toHex());
+        $this->assertEquals('e356e39340cb7844ce2203ee5bc2b1f6', $paths[0][2]->key->id->toHex());
+        $this->assertEquals('58d132295cbb57fed93bf52f86fa809d', $paths[0][3]->key->id->toHex());
+
+        $chain = new Chain([
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[0])),
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[1])),
+            Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[2])),
+            // Missing root CA
+        ]);
+
+        $paths = $chain->buildPaths();
+        $this->assertCount(0, $paths);
+
+        $chain = new Chain([]);
+
+        $paths = $chain->buildPaths();
+        $this->assertCount(0, $paths);
+    }
+
+    public function testGetRootCertificates()
+    {
+        $chain = Chain::fromBinary(BinaryString::fromBase64(self::EXAMPLE_1));
+        $this->assertCount(4, $chain->certificates);
+
+        $rootCertificates = $chain->getRootCertificates();
+        $this->assertCount(1, $rootCertificates);
+        $this->assertTrue($rootCertificates[0]->isRootCA());
+        $this->assertEquals(self::EXAMPLE_CERTS[3], $rootCertificates[0]->toBinary()->toBase64());
+    }
+
+    public function testGetLeafCertificates()
+    {
+        $chain = Chain::fromBinary(BinaryString::fromBase64(self::EXAMPLE_1));
+        $this->assertCount(4, $chain->certificates);
+
+        $leafCertificates = $chain->getLeafCertificates();
+        $this->assertCount(1, $leafCertificates);
+        $this->assertFalse($leafCertificates[0]->isRootCA());
+        $this->assertEquals(self::EXAMPLE_CERTS[0], $leafCertificates[0]->toBinary()->toBase64());
+    }
 }
