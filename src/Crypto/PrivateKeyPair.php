@@ -8,6 +8,8 @@ use KDuma\CertificateChainOfTrust\Utils\BinaryWriter;
 
 readonly class PrivateKeyPair extends PublicKey
 {
+    const string MAGIC = "\x3e\xb8\xaf\x6a\xd7\x8a";
+
     public function __construct(
         KeyId $id,
         BinaryString $publicKey,
@@ -45,7 +47,7 @@ readonly class PrivateKeyPair extends PublicKey
     {
         $writer = new BinaryWriter();
 
-        $writer->writeBytes(new BinaryString("\x3e\xb8\xaf\x6a\xd7\x8a"));
+        $writer->writeBytes(new BinaryString(self::MAGIC));
 
         $writer->writeBytesWithLength($this->id);
         $writer->writeBytesWithLength($this->publicKey, true);
@@ -58,7 +60,7 @@ readonly class PrivateKeyPair extends PublicKey
     {
         $reader = new BinaryReader($data);
         $magic = $reader->readBytes(6);
-        if (!$magic->equals(new BinaryString("\x3e\xb8\xaf\x6a\xd7\x8a"))) {
+        if (!$magic->equals(new BinaryString(self::MAGIC))) {
             throw new \InvalidArgumentException('Invalid magic bytes for PrivateKey');
         }
 
