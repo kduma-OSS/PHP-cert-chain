@@ -52,21 +52,21 @@ readonly class PublicKey
     {
         $reader = new BinaryReader($data);
         $magic = $reader->readBytes(3);
-        if ($magic !== "\x3e\xe6\xca") {
+        if (!$magic->equals(new BinaryString("\x3e\xe6\xca"))) {
             throw new \InvalidArgumentException('Invalid magic bytes for PublicKey');
         }
 
         try {
             $id_length = $reader->readByte();
-            $id = new KeyId($reader->readBytes($id_length));
+            $id = new KeyId($reader->readBytes($id_length)->value);
 
             $publicKey_length = $reader->readUint16BE();
-            $publicKey = new BinaryString($reader->readBytes($publicKey_length));
+            $publicKey = $reader->readBytes($publicKey_length);
         } catch (\RuntimeException $e) {
             throw new \InvalidArgumentException('Failed to parse PublicKey: ' . $e->getMessage());
         }
 
-        if($reader->hasMoreData()) {
+        if($reader->has_more_data) {
             throw new \InvalidArgumentException('Extra data found after parsing PublicKey');
         }
 
