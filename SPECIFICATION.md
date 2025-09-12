@@ -1,0 +1,131 @@
+# Simple Certificate Specification (Complete)
+
+## Common rules
+- **Container:** Standard Base64 (no line breaks).
+- **Endianness:** All multi-byte integers are **big-endian**.
+- **Strings:** UTF-8, no NUL terminator.
+- **Counts:** Single byte counts.
+- **TBS (to-be-signed) region:** From **Magic** through **Flags** (inclusive).
+
+---
+
+# Binary layout (by `AlgVer`)
+
+## Shared header
+| # | Field | Size | Notes |
+|---|---|---:|---|
+| 1 | **Magic** | 3 | Fixed `08 44 53` (`"CERT"` when Base64). |
+| 2 | **AlgVer** | 1 | `0x01 = Ed25519 v1`, `0xF1 = Vendor-specific`. Others reserved. |
+
+From here, the structure **branches** depending on `AlgVer`.
+
+## A) `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, no length fields)
+
+| # | Field | Size | Notes |
+|---|---|---:|---|
+| 3 | **KeyId** | 16 | Must be `SHA-256(PubKey)[0..15]`. |
+| 4 | **PubKey** | 32 | Raw Ed25519 public key. |
+| 5 | **DescLen** | 1 | 0–255. Description is **required** (policy may enforce ≥1). |
+| 6 | **Desc** | DescLen | UTF-8. |
+| 7 | **UserDescCount** | 1 | N descriptors (0–255). |
+| 8 | **For i in 1..N: Type** | 1 | See enum below. |
+| 9 | **For i: ValLen** | 2 | UTF-8 value length (UINT16BE). |
+| 10 | **For i: Value** | ValLen | UTF-8. |
+| 11 | **Flags** | 2 | Permission bitmask (see table). **TBS ends here.** |
+| 12 | **SigCount** | 1 | **Must be ≥ 1**. |
+| 13 | **For j in 1..M: SignKeyId** | 16 | Signer’s KeyId (same 16-byte rule). **No length field.** |
+| 14 | **For j: Signature** | 64 | Raw Ed25519 signature. **No length field.** |
+
+## B) `AlgVer = 0xF1` (Vendor-specific — variable sizes)
+
+| # | Field | Size | Notes |
+|---|---|---:|---|
+| 3 | **KeyIdLen** | 1 | Recommended 16. |
+| 4 | **KeyId** | KeyIdLen | **Must** equal `SHA-256(PubKey)[0..15]` if KeyIdLen=16. |
+| 5 | **PubKeyLen** | 2 | UINT16BE. |
+| 6 | **PubKey** | PubKeyLen | Vendor-defined format. |
+| 7 | **DescLen** | 1 | 0–255. Description **required**. |
+| 8 | **Desc** | DescLen | UTF-8. |
+| 9 | **UserDescCount** | 1 | N descriptors (0–255). |
+| 10 | **For i: Type** | 1 | See enum below. |
+| 11 | **For i: ValLen** | 2 | UTF-8 length. |
+| 12 | **For i: Value** | ValLen | UTF-8. |
+| 13 | **Flags** | 2 | Bitmask. **TBS ends here.** |
+| 14 | **SigCount** | 1 | **Must be ≥ 1**. |
+| 15 | **For j: SignKeyIdLen** | 1 | Recommended 16. |
+| 16 | **For j: SignKeyId** | SignKeyIdLen | Signer key identifier. |
+| 17 | **For j: SigLen** | 2 | UINT16BE. |
+| 18 | **For j: Signature** | SigLen | Vendor-defined format. |
+
+## Descriptor Type (1 byte)
+- `0x01` — Username
+- `0x02` — Email
+- `0x03` — Domain
+- `0xFF` — Vendor-specific (opaque)
+> Descriptors are **optional**. Multiple entries (even of same type) allowed.
+
+## Flags (2 bytes, bitmask)
+- `0x0001` — **Root CA**
+- `0x0002` — **Intermediate CA**
+- `0x0004` — **CA**
+- `0x0100` — **Document Signer**
+- `0x0200` — **Template Signer**
+- Other bits **reserved** (must be `0` on encode; ignore on decode).
+
+---
+
+## Flag semantics and policy
+
+### Role implications
+- **Root CA (`0x0001`)**  
+  - **Must be self-signed** (at least one signature entry where `SignKeyId == KeyId` and the signature verifies).  
+  - Should also carry `CA (0x0004)` to indicate certificate-signing capability (recommended).
+
+- **Intermediate CA (`0x0002`)**  
+  - **May sign** only **CA (`0x0004`)** or **Intermediate CA (`0x0002`)** certificates.  
+  - Usually also sets `CA (0x0004)`.
+
+- **CA (`0x0004`)**  
+  - **May sign** non-CA keys (e.g., Document/Template signers) and/or CA/Intermediate (subject to the issuer’s own flags below).
+
+### CA vs. End‑Entity
+- If a cert has **any CA flag set** (`0x0001`, `0x0002`, `0x0004`), it **must not be used** directly as a **Document Signer** or **Template Signer**.
+- If such a CA certificate sets `0x0100` and/or `0x0200` bits, interpret those bits **only** as authorization to issue certificates carrying those end‑entity bits, not as its own capabilities.
+
+### End‑Entity Authorization
+- For each end‑entity bit (`0x0100`, `0x0200`), if a subject certificate contains the bit, its issuer must also have that bit. Otherwise the signature is **policy‑invalid** even if cryptographically valid.
+
+### Issuance Constraints
+- Issuer must have `CA (0x0004)` to sign any certificate.
+- Intermediate CA (`0x0002`) may sign only CA (`0x0004`) or Intermediate (`0x0002`) certificates.
+- Child flags must be a subset of parent flags: `Child.Flags ⊆ Parent.Flags`.
+
+---
+
+## Chain validation algorithm
+
+1. Verify structure and lengths.
+2. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
+3. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
+4. For each child/parent pair:
+   - Parent must have CA bit (`0x0004`).
+   - If parent has Intermediate bit (`0x0002`), child must be CA or Intermediate.
+   - For each end‑entity bit (`0x0100`, `0x0200`): if child has it, parent must also have it.
+   - Enforce `child.Flags ⊆ parent.Flags`.
+5. Root with `0x0001` must be self-signed and present in the trust store.
+
+---
+
+## Ed25519 details (AlgVer = 0x01)
+- **Public key:** 32 raw bytes (RFC 8032).
+- **Signature:** 64 raw bytes (RFC 8032).
+- **KeyId:** first 16 bytes of SHA-256 over the 32-byte public key.
+- **Signature input:** exactly the TBS bytes (no pre-hash).
+
+---
+
+## Vendor mode (AlgVer = 0xF1)
+- Length fields are present for KeyId, PubKey, and signatures.
+- KeyId derivation must still map to `SHA-256(PubKey)[0..15]` (or vendor-defined truncation).
+
+---
