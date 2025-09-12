@@ -17,16 +17,28 @@ abstract readonly class CertificatesContainer
         if (array_any($this->certificates, fn($certificate) => !$certificate instanceof Certificate)) {
             throw new \InvalidArgumentException('All elements of $certificates must be instances of Certificate');
         }
+
+        foreach ($this->certificates as $certificate) {
+            $this->validateAddedCertificate($certificate);
+        }
     }
+
+    abstract protected function validateAddedCertificate(Certificate $certificate): void;
+
+    abstract protected static function getMagicBytes(): string;
 
     public static function fromBinary(BinaryString $data): static
     {
         $reader = new BinaryReader($data);
-        return static::fromBinaryReader($reader);
-    }
 
-    public static function fromBinaryReader(BinaryReader $reader): static
-    {
+        $requiredMagic = new BinaryString(static::getMagicBytes());
+        if($requiredMagic->size() > 0) {
+            $actualMagic = $reader->readBytes($requiredMagic->size());
+            if (!$actualMagic->equals($requiredMagic)) {
+                throw new \InvalidArgumentException('Invalid magic bytes for ' . static::class);
+            }
+        }
+
         $certificates = [];
         while ($reader->has_more_data) {
             $certificates[] = Certificate::fromBinaryReader($reader);
@@ -38,6 +50,8 @@ abstract readonly class CertificatesContainer
     public function toBinary(): BinaryString
     {
         $writer = new BinaryWriter();
+
+        $writer->writeBytes(new BinaryString(static::getMagicBytes()));
 
         foreach ($this->certificates as $certificate) {
             $writer->writeBytes($certificate->toBinary());

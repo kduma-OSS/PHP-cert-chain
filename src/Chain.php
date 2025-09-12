@@ -2,8 +2,22 @@
 
 namespace KDuma\CertificateChainOfTrust;
 
+use Override;
+
 readonly class Chain extends CertificatesContainer
 {
+    #[Override]
+    protected function validateAddedCertificate(Certificate $certificate): void
+    {
+        // Dont need to validate anything specific for Chain
+    }
+
+    #[Override]
+    protected static function getMagicBytes(): string
+    {
+        return ''; // No specific magic bytes for Chain
+    }
+
     /**
      * @return Certificate[]
      */

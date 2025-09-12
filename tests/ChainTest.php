@@ -59,15 +59,6 @@ class ChainTest extends TestCase
         $this->assertCount(4, $chain->certificates);
     }
 
-    public function testFromBinaryReader()
-    {
-        $reader = new BinaryReader(BinaryString::fromBase64(self::EXAMPLE_1));
-        $chain = Chain::fromBinaryReader($reader);
-
-        $this->assertCount(4, $chain->certificates);
-        $this->assertEquals($reader->length, $reader->position);
-    }
-
     public function testGetCertificate()
     {
         $chain = Chain::fromBinary(BinaryString::fromBase64(self::EXAMPLE_1));
