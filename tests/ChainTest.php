@@ -72,12 +72,12 @@ class ChainTest extends TestCase
         $chain = Chain::fromBinary(BinaryString::fromBase64(self::EXAMPLE_1));
         $this->assertCount(4, $chain->certificates);
 
-        $certificate = $chain->getCertificate();
+        $certificate = $chain->getFirstCertificate();
         $this->assertInstanceOf(Certificate::class, $certificate);
         $this->assertEquals(self::EXAMPLE_CERTS[0], $certificate->toBinary()->toBase64());
 
         $emptyChain = new Chain([]);
-        $this->assertNull($emptyChain->getCertificate());
+        $this->assertNull($emptyChain->getFirstCertificate());
     }
 
 
