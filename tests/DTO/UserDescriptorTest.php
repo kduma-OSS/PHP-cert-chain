@@ -4,6 +4,8 @@ namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
+use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
+use KDuma\CertificateChainOfTrust\Utils\BinaryString;
 use PHPUnit\Framework\TestCase;
 
 class UserDescriptorTest extends TestCase
@@ -20,7 +22,7 @@ class UserDescriptorTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Descriptor value cannot be empty', $e->getMessage());
         }
-        
+
         try {
             new UserDescriptor(DescriptorType::USERNAME, "\x80\x81");
         } catch (\InvalidArgumentException $e) {
@@ -48,5 +50,34 @@ class UserDescriptorTest extends TestCase
 
         $descriptor = new UserDescriptor(DescriptorType::DOMAIN, 'doe.com');
         $this->assertEquals('Domain: doe.com', $descriptor->toString());
+    }
+
+    public function testToBinary()
+    {
+        $descriptor = new UserDescriptor(DescriptorType::USERNAME, 'johndoe');
+        $this->assertEquals('0100076a6f686e646f65', $descriptor->toBinary()->toHex());
+    }
+
+    public function testFromBinaryReader()
+    {
+        $reader = new BinaryReader(BinaryString::fromHex('0100076a6f686e646f65'));
+        $descriptor = UserDescriptor::fromBinaryReader($reader);
+        $this->assertEquals(new UserDescriptor(DescriptorType::USERNAME, 'johndoe'), $descriptor);
+        $this->assertEquals($reader->length, $reader->position);
+
+        try {
+            $reader = new BinaryReader(BinaryString::fromHex('0100076a6f686e646f')); // incomplete
+            UserDescriptor::fromBinaryReader($reader);
+            $this->fail('Expected exception not thrown');
+        } catch (\RuntimeException $e) {
+            $this->assertEquals('Unexpected end of data while reading 7 bytes', $e->getMessage());
+            $this->assertEquals(0, $reader->position); // position should be rewound
+        }
+    }
+
+    public function testFromBinary()
+    {
+        $descriptor = UserDescriptor::fromBinary(BinaryString::fromHex('0100076a6f686e646f65'));
+        $this->assertEquals(new UserDescriptor(DescriptorType::USERNAME, 'johndoe'), $descriptor);
     }
 }
