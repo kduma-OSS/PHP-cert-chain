@@ -1,8 +1,8 @@
 <?php
 
-namespace KDuma\CertificateChainOfTrust\Tests\Enums;
+namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
-use KDuma\CertificateChainOfTrust\Enums\DescriptorType;
+use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

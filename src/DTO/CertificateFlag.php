@@ -1,6 +1,6 @@
 <?php
 
-namespace KDuma\CertificateChainOfTrust\Enums;
+namespace KDuma\CertificateChainOfTrust\DTO;
 
 enum CertificateFlag: int
 {

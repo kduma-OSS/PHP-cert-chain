@@ -1,8 +1,8 @@
 <?php
 
-namespace KDuma\CertificateChainOfTrust\Tests\Enums;
+namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
-use KDuma\CertificateChainOfTrust\Enums\CertificateFlag;
+use KDuma\CertificateChainOfTrust\DTO\CertificateFlag;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
