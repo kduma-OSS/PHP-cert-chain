@@ -2,6 +2,7 @@
 
 namespace KDuma\CertificateChainOfTrust;
 
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
 use KDuma\CertificateChainOfTrust\Utils\BinaryString;
 use KDuma\CertificateChainOfTrust\Utils\BinaryWriter;
@@ -48,5 +49,10 @@ abstract readonly class CertificatesContainer
     public function getFirstCertificate(): ?Certificate
     {
         return $this->certificates[0] ?? null;
+    }
+
+    public function getById(KeyId $id): ?Certificate
+    {
+        return array_find($this->certificates, fn($certificate) => $certificate->key->id->equals($id));
     }
 }

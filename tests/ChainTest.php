@@ -4,6 +4,7 @@ namespace KDuma\CertificateChainOfTrust\Tests;
 
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\Chain;
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
 use KDuma\CertificateChainOfTrust\Utils\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -143,5 +144,12 @@ class ChainTest extends TestCase
         $this->assertCount(1, $leafCertificates);
         $this->assertFalse($leafCertificates[0]->isRootCA());
         $this->assertEquals(self::EXAMPLE_CERTS[0], $leafCertificates[0]->toBinary()->toBase64());
+    }
+
+    public function testGetById()
+    {
+        $chain = Chain::fromBinary(BinaryString::fromBase64(self::EXAMPLE_1));
+        $this->assertEquals(Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERTS[3])), $chain->getById(KeyId::fromHex('58d132295cbb57fed93bf52f86fa809d')));
+        $this->assertNull($chain->getById(KeyId::fromString('nonexistent')));
     }
 }
