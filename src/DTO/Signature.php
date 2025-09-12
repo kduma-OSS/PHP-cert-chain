@@ -30,32 +30,51 @@ readonly class Signature
         return $this->keyId->equals($other->keyId) && $this->signature->equals($other->signature);
     }
 
-    public function toBinary(): BinaryString
+    public function toBinary(bool $fixed_length = false): BinaryString
     {
         $writer = new BinaryWriter();
+        if($fixed_length) {
+            if ($this->keyId->size() !== 16) {
+                throw new \InvalidArgumentException('KeyId must be 16 bytes for fixed length encoding');
+            }
+            if ($this->signature->size() !== 64) {
+                throw new \InvalidArgumentException('Signature must be 64 bytes for fixed length encoding');
+            }
+            $writer->writeBytes($this->keyId);
+            $writer->writeBytes($this->signature);
+            return $writer->getBuffer();
+        }
+
         $writer->writeBytesWithLength($this->keyId);
         $writer->writeBytesWithLength($this->signature);
 
         return $writer->getBuffer();
     }
 
-    public static function fromBinaryReader(BinaryReader $reader): self
+    public static function fromBinaryReader(BinaryReader $reader, bool $fixed_length = false): self
     {
-        $keyId = $reader->readBytesWithLength();
+        $initialPosition = $reader->position;
+
         try {
-            $signature = $reader->readBytesWithLength();
+            if($fixed_length) {
+                $keyId = $reader->readBytes(16);
+                $signature = $reader->readBytes(64);
+            } else {
+                $keyId = $reader->readBytesWithLength();
+                $signature = $reader->readBytesWithLength();
+            }
         } catch (\RuntimeException $e) {
-            $reader->position -= $keyId->size() + 1; // rewind to before reading keyId
+            $reader->position = $initialPosition; // rewind to before reading keyId
             throw $e;
         }
 
         return new self(new KeyId($keyId->value), $signature);
     }
 
-    public static function fromBinary(BinaryString $binary): self
+    public static function fromBinary(BinaryString $binary, bool $fixed_length = false): self
     {
         $reader = new BinaryReader($binary);
-        return self::fromBinaryReader($reader);
+        return self::fromBinaryReader($reader, $fixed_length);
     }
 
     public static function make(BinaryString $data, PrivateKeyPair $keyPair): Signature

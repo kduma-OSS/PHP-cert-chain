@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 class SignatureTest extends TestCase
 {
     const string SIGNATURE_HEX = '10d7f832df347ca6d99ddab85b3887db3540facdbc928883aedca0b1141325a8227241c10e888279ec02420f4b8878c6827dfde924543e8a7cdc5df192dc4631c1bd6e9ec9c9a81fc7383b0606578cd7b306';
+    const string FIXED_SIGNATURE_HEX = 'd7f832df347ca6d99ddab85b3887db35facdbc928883aedca0b1141325a8227241c10e888279ec02420f4b8878c6827dfde924543e8a7cdc5df192dc4631c1bd6e9ec9c9a81fc7383b0606578cd7b306';
     private PrivateKeyPair $key;
     private BinaryString $data;
     private Signature $signature;
@@ -73,6 +74,11 @@ class SignatureTest extends TestCase
         $this->assertEquals($this->signature, $signature);
         $this->assertEquals($reader->length, $reader->position);
 
+        $reader = new BinaryReader(BinaryString::fromHex(self::FIXED_SIGNATURE_HEX));
+        $signature = Signature::fromBinaryReader($reader, true);
+        $this->assertEquals($this->signature, $signature);
+        $this->assertEquals($reader->length, $reader->position);
+
         try {
             $reader = new BinaryReader(BinaryString::fromHex(substr(self::SIGNATURE_HEX, 0, -2))); // incomplete
             Signature::fromBinaryReader($reader);
@@ -86,6 +92,23 @@ class SignatureTest extends TestCase
     public function testToBinary()
     {
         $this->assertEquals(self::SIGNATURE_HEX, $this->signature->toBinary()->toHex());
+        $this->assertEquals(self::FIXED_SIGNATURE_HEX, $this->signature->toBinary(true)->toHex());
+
+        try {
+            $invalidSignature = new Signature($this->signature->keyId, new BinaryString('short'));
+            $invalidSignature->toBinary(true);
+            $this->fail('Expected exception not thrown');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertEquals('Signature must be 64 bytes for fixed length encoding', $e->getMessage());
+        }
+
+        try {
+            $invalidKeyId = new Signature(new KeyId('short'), $this->signature->signature);
+            $invalidKeyId->toBinary(true);
+            $this->fail('Expected exception not thrown');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertEquals('KeyId must be 16 bytes for fixed length encoding', $e->getMessage());
+        }
     }
 
     public function testMake()
