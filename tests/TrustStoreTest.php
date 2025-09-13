@@ -24,6 +24,17 @@ class TrustStoreTest extends TestCase
         $this->assertEquals('Example Root CA Certificate', $store->certificates[0]->description);
     }
 
+    public function testFromBinaryInvalidMagic()
+    {
+        try {
+            // Provide 6 arbitrary bytes that do not match TrustStore magic
+            TrustStore::fromBinary(BinaryString::fromString('foobar'));
+            $this->fail('Expected InvalidArgumentException not thrown');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertEquals('Invalid magic bytes for ' . TrustStore::class, $exception->getMessage());
+        }
+    }
+
     public function testConstruct()
     {
         $store = new TrustStore([
