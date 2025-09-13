@@ -9,17 +9,15 @@
 
 ---
 
-# Binary layout (by `AlgVer`)
+# Binary layout
 
 ## Shared header
 | # | Field | Size | Notes |
 |---|---|---:|---|
 | 1 | **Magic** | 3 | Fixed `08 44 53` (`"CERT"` when Base64). |
-| 2 | **AlgVer** | 1 | `0x01 = Ed25519 v1`, `0xF1 = Vendor-specific`. Others reserved. |
+| 2 | **AlgVer** | 1 | `0x01 = Ed25519 v1`. Others reserved. |
 
-From here, the structure **branches** depending on `AlgVer`.
-
-## A) `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, no length fields)
+The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, no length fields).
 
 | # | Field | Size | Notes |
 |---|---|---:|---|
@@ -36,32 +34,10 @@ From here, the structure **branches** depending on `AlgVer`.
 | 13 | **For j in 1..M: SignKeyId** | 16 | Signer’s KeyId (same 16-byte rule). **No length field.** |
 | 14 | **For j: Signature** | 64 | Raw Ed25519 signature. **No length field.** |
 
-## B) `AlgVer = 0xF1` (Vendor-specific — variable sizes)
-
-| # | Field | Size | Notes |
-|---|---|---:|---|
-| 3 | **KeyIdLen** | 1 | Recommended 16. |
-| 4 | **KeyId** | KeyIdLen | **Must** equal `SHA-256(PubKey)[0..15]` if KeyIdLen=16. |
-| 5 | **PubKeyLen** | 2 | UINT16BE. |
-| 6 | **PubKey** | PubKeyLen | Vendor-defined format. |
-| 7 | **DescLen** | 1 | 0–255. Description **required**. |
-| 8 | **Desc** | DescLen | UTF-8. |
-| 9 | **UserDescCount** | 1 | N descriptors (0–255). |
-| 10 | **For i: Type** | 1 | See enum below. |
-| 11 | **For i: ValLen** | 2 | UTF-8 length. |
-| 12 | **For i: Value** | ValLen | UTF-8. |
-| 13 | **Flags** | 2 | Bitmask. **TBS ends here.** |
-| 14 | **SigCount** | 1 | **Must be ≥ 1**. |
-| 15 | **For j: SignKeyIdLen** | 1 | Recommended 16. |
-| 16 | **For j: SignKeyId** | SignKeyIdLen | Signer key identifier. |
-| 17 | **For j: SigLen** | 2 | UINT16BE. |
-| 18 | **For j: Signature** | SigLen | Vendor-defined format. |
-
 ## Descriptor Type (1 byte)
 - `0x01` — Username
 - `0x02` — Email
 - `0x03` — Domain
-- `0xFF` — Vendor-specific (opaque)
 > Descriptors are **optional**. Multiple entries (even of same type) allowed.
 
 ## Flags (2 bytes, bitmask)
@@ -124,15 +100,6 @@ From here, the structure **branches** depending on `AlgVer`.
 
 ---
 
-## Vendor mode (AlgVer = 0xF1)
-- Length fields are present for KeyId, PubKey, and signatures.
-- KeyId derivation must still map to `SHA-256(PubKey)[0..15]` (or vendor-defined truncation).
-
----
-
-
----
-
 ## Chain packaging (concatenation format)
 
 To allow distributing an entire trust path as **one Base64 string**, a certificate may be followed **immediately** by another full certificate structure (starting again at **Magic**). You can therefore concatenate the whole trust tree (leaf → … → root) into one binary blob and **Base64‑encode the entire concatenation as a single string** (no separators).
@@ -145,7 +112,7 @@ To allow distributing an entire trust path as **one Base64 string**, a certifica
 
 ### Parsing rules
 - Decode Base64 once to obtain the binary blob.
-- Starting at offset 0, parse a **Certificate**. Its **length** is determinable from its internal fields (notably `DescLen`, `UserDescCount` block, `SigCount`, and, for vendor mode, explicit length fields).
+- Starting at offset 0, parse a **Certificate**. Its **length** is determinable from its internal fields (notably `DescLen`, `UserDescCount` block, and `SigCount`).
 - After finishing one certificate, **if there are remaining bytes**, the next byte MUST be `Magic` (`08 44 53`), and parsing continues for the next certificate.
 - Continue until the end of the byte array. Reject if trailing bytes remain that do not begin with `Magic` or if any certificate is malformed.
 
@@ -157,6 +124,6 @@ To allow distributing an entire trust path as **one Base64 string**, a certifica
 ### ABNF update
 ```
 CertificateChain = 1*Certificate        ; one or more Certificates back-to-back
-; Each Certificate is defined as previously for AlgVer = 0x01 or 0xF1
+; Each Certificate is defined as previously for AlgVer = 0x01
 ; The entire CertificateChain is Base64-encoded when transported as text.
 ```
