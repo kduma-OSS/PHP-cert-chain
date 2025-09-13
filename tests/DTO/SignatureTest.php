@@ -8,8 +8,8 @@ use KDuma\CertificateChainOfTrust\Crypto\PrivateKeyPair;
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

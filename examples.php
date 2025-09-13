@@ -7,7 +7,7 @@ use KDuma\CertificateChainOfTrust\DTO\CertificateFlagsCollection;
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryString;
 
 require __DIR__ . '/vendor/autoload.php';
 

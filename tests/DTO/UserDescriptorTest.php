@@ -4,8 +4,8 @@ namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\TestCase;
 
 class UserDescriptorTest extends TestCase

@@ -7,9 +7,9 @@ use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
 use KDuma\CertificateChainOfTrust\DTO\CertificateFlagsCollection;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
-use KDuma\CertificateChainOfTrust\Utils\BinaryWriter;
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
+use KDuma\BinaryTools\BinaryWriter;
 
 readonly class Certificate
 {

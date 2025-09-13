@@ -3,9 +3,9 @@
 namespace KDuma\CertificateChainOfTrust\DTO;
 
 
-use KDuma\CertificateChainOfTrust\Utils\BinaryReader;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
-use KDuma\CertificateChainOfTrust\Utils\BinaryWriter;
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
+use KDuma\BinaryTools\BinaryWriter;
 
 readonly class UserDescriptor
 {

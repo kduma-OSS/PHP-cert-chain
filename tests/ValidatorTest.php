@@ -16,7 +16,7 @@ use KDuma\CertificateChainOfTrust\DTO\ValidationError;
 use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use KDuma\CertificateChainOfTrust\DTO\ValidationWarning;
 use KDuma\CertificateChainOfTrust\TrustStore;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

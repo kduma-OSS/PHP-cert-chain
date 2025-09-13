@@ -2,7 +2,7 @@
 
 namespace KDuma\CertificateChainOfTrust\Crypto;
 
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryString;
 use SodiumException;
 
 class Ed25519

@@ -80,7 +80,7 @@ if (!$result->isValid) {
 ## Signing and verifying messages
 
 ```php
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryString;
 
 $message = BinaryString::fromString('hello world');
 $signature = Signature::make($message, $leafKey);

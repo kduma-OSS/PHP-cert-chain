@@ -1,6 +1,6 @@
 <?php
 
-namespace KDuma\CertificateChainOfTrust\Utils;
+namespace KDuma\BinaryTools;
 
 
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace KDuma\CertificateChainOfTrust\Tests\Utils;
+namespace KDuma\BinaryTools\Tests;
 
 use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

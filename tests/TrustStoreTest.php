@@ -4,7 +4,7 @@ namespace KDuma\CertificateChainOfTrust\Tests;
 
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\TrustStore;
-use KDuma\CertificateChainOfTrust\Utils\BinaryString;
+use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\TestCase;
 
 class TrustStoreTest extends TestCase
