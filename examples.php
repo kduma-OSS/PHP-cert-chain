@@ -43,8 +43,8 @@ $root_ca_1 = new Certificate(
         CertificateFlag::ROOT_CA,
         CertificateFlag::CA,
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );
@@ -60,7 +60,7 @@ $root_ca_2 = new Certificate(
         CertificateFlag::ROOT_CA,
         CertificateFlag::CA,
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
+        CertificateFlag::END_ENTITY_FLAG_1,
     ]),
     signatures: []
 );
@@ -74,8 +74,8 @@ $intermediate_ca_1 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );
@@ -89,8 +89,8 @@ $intermediate_ca_2 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );
@@ -104,8 +104,8 @@ $intermediate_ca_3 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );
@@ -119,8 +119,8 @@ $ca_1 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );
@@ -134,8 +134,8 @@ $ca_2 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );
@@ -149,8 +149,8 @@ $ca_3 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::INTERMEDIATE_CA,
-        CertificateFlag::DOCUMENT_SIGNER,
-        CertificateFlag::TEMPLATE_SIGNER
+        CertificateFlag::END_ENTITY_FLAG_1,
+        CertificateFlag::END_ENTITY_FLAG_2
     ]),
     signatures: []
 );

@@ -12,7 +12,7 @@ class CertificateFlagsCollectionTest extends TestCase
 {
     public function testEndEntityFlags()
     {
-        $this->assertEquals(0x0300, CertificateFlagsCollection::EndEntityFlags()->value);
+        $this->assertEquals(0xFF00, CertificateFlagsCollection::EndEntityFlags()->value);
     }
     public function testCAFlags()
     {
@@ -27,8 +27,8 @@ class CertificateFlagsCollectionTest extends TestCase
     {
         $this->assertEquals(0x0000, CertificateFlagsCollection::fromList([])->value);
 
-        $this->assertEquals(CertificateFlag::CA->value && CertificateFlag::DOCUMENT_SIGNER->value, CertificateFlagsCollection::fromList([
-            CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER
+        $this->assertEquals(CertificateFlag::CA->value && CertificateFlag::END_ENTITY_FLAG_1->value, CertificateFlagsCollection::fromList([
+            CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1
         ])->value);
 
         try {
@@ -40,10 +40,10 @@ class CertificateFlagsCollectionTest extends TestCase
 
     public function testHas()
     {
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertTrue($collection->has(CertificateFlag::CA));
-        $this->assertTrue($collection->has(CertificateFlag::DOCUMENT_SIGNER));
-        $this->assertFalse($collection->has(CertificateFlag::TEMPLATE_SIGNER));
+        $this->assertTrue($collection->has(CertificateFlag::END_ENTITY_FLAG_1));
+        $this->assertFalse($collection->has(CertificateFlag::END_ENTITY_FLAG_2));
     }
 
     public function testHasRootCA()
@@ -73,67 +73,67 @@ class CertificateFlagsCollectionTest extends TestCase
         $this->assertTrue($collection->hasIntermediateCA());
     }
 
-    public function testHasTemplateSigner()
+    public function testHasEndEntityFlag2()
     {
         $collection = CertificateFlagsCollection::fromList([]);
-        $this->assertFalse($collection->hasTemplateSigner());
+        $this->assertFalse($collection->has(CertificateFlag::END_ENTITY_FLAG_2));
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::TEMPLATE_SIGNER]);
-        $this->assertTrue($collection->hasTemplateSigner());
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_2]);
+        $this->assertTrue($collection->has(CertificateFlag::END_ENTITY_FLAG_2));
     }
 
-    public function testHasDocumentSigner()
+    public function testHasEndEntityFlag1()
     {
         $collection = CertificateFlagsCollection::fromList([]);
-        $this->assertFalse($collection->hasDocumentSigner());
+        $this->assertFalse($collection->has(CertificateFlag::END_ENTITY_FLAG_1));
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]);
-        $this->assertTrue($collection->hasDocumentSigner());
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_1]);
+        $this->assertTrue($collection->has(CertificateFlag::END_ENTITY_FLAG_1));
     }
 
     public function testIsCA()
     {
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertTrue($collection->isCA());
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertTrue($collection->isCA());
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::INTERMEDIATE_CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertTrue($collection->isCA());
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertFalse($collection->isCA());
     }
 
     public function testGetCAFlags()
     {
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertEquals(CertificateFlag::CA->value, $collection->getCAFlags()->value);
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertEquals(CertificateFlag::ROOT_CA->value, $collection->getCAFlags()->value);
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::INTERMEDIATE_CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertEquals(CertificateFlag::INTERMEDIATE_CA->value, $collection->getCAFlags()->value);
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertEquals(CertificateFlag::ROOT_CA->value | CertificateFlag::INTERMEDIATE_CA->value, $collection->getCAFlags()->value);
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_1]);
         $this->assertEquals(0x0000, $collection->getCAFlags()->value);
     }
 
     public function testGetEndEntityFlags()
     {
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER, CertificateFlag::TEMPLATE_SIGNER, CertificateFlag::CA]);
-        $this->assertEquals(CertificateFlag::DOCUMENT_SIGNER->value | CertificateFlag::TEMPLATE_SIGNER->value, $collection->getEndEntityFlags()->value);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_1, CertificateFlag::END_ENTITY_FLAG_2, CertificateFlag::CA]);
+        $this->assertEquals(CertificateFlag::END_ENTITY_FLAG_1->value | CertificateFlag::END_ENTITY_FLAG_2->value, $collection->getEndEntityFlags()->value);
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]);
-        $this->assertEquals(CertificateFlag::DOCUMENT_SIGNER->value, $collection->getEndEntityFlags()->value);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_1]);
+        $this->assertEquals(CertificateFlag::END_ENTITY_FLAG_1->value, $collection->getEndEntityFlags()->value);
 
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::TEMPLATE_SIGNER, CertificateFlag::CA]);
-        $this->assertEquals(CertificateFlag::TEMPLATE_SIGNER->value, $collection->getEndEntityFlags()->value);
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_2, CertificateFlag::CA]);
+        $this->assertEquals(CertificateFlag::END_ENTITY_FLAG_2->value, $collection->getEndEntityFlags()->value);
 
         $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA]);
         $this->assertEquals(0x0000, $collection->getEndEntityFlags()->value);
@@ -141,8 +141,8 @@ class CertificateFlagsCollectionTest extends TestCase
 
     public function testToString()
     {
-        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]);
-        $this->assertEquals('CA | Document Signer', $collection->toString());
+        $collection = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1]);
+        $this->assertEquals('CA | End Entity Flag 1', $collection->toString());
 
         $collection = CertificateFlagsCollection::fromList([]);
         $this->assertEquals('', $collection->toString());
@@ -150,8 +150,8 @@ class CertificateFlagsCollectionTest extends TestCase
 
     public function testIsSubsetOf()
     {
-        $collectionA = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]);
-        $collectionB = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER, CertificateFlag::TEMPLATE_SIGNER]);
+        $collectionA = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1]);
+        $collectionB = CertificateFlagsCollection::fromList([CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1, CertificateFlag::END_ENTITY_FLAG_2]);
         $collectionC = CertificateFlagsCollection::fromList([CertificateFlag::CA]);
 
         $this->assertTrue($collectionA->isSubsetOf($collectionB));

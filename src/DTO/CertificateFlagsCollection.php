@@ -25,8 +25,14 @@ class CertificateFlagsCollection
     public static function EndEntityFlags(): self
     {
         return self::fromList([
-            CertificateFlag::DOCUMENT_SIGNER,
-            CertificateFlag::TEMPLATE_SIGNER,
+            CertificateFlag::END_ENTITY_FLAG_1,
+            CertificateFlag::END_ENTITY_FLAG_2,
+            CertificateFlag::END_ENTITY_FLAG_3,
+            CertificateFlag::END_ENTITY_FLAG_4,
+            CertificateFlag::END_ENTITY_FLAG_5,
+            CertificateFlag::END_ENTITY_FLAG_6,
+            CertificateFlag::END_ENTITY_FLAG_7,
+            CertificateFlag::END_ENTITY_FLAG_8,
         ]);
     }
 
@@ -75,16 +81,6 @@ class CertificateFlagsCollection
     public function hasCA(): bool
     {
         return $this->has(CertificateFlag::CA);
-    }
-
-    public function hasDocumentSigner(): bool
-    {
-        return $this->has(CertificateFlag::DOCUMENT_SIGNER);
-    }
-
-    public function hasTemplateSigner(): bool
-    {
-        return $this->has(CertificateFlag::TEMPLATE_SIGNER);
     }
 
     public function isCA(): bool

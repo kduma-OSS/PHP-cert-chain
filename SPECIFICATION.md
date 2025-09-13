@@ -44,8 +44,14 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
 - `0x0001` — **Root CA**
 - `0x0002` — **Intermediate CA**
 - `0x0004` — **CA**
-- `0x0100` — **Document Signer**
-- `0x0200` — **Template Signer**
+- `0x0100` — **End Entity Flag 1**
+- `0x0200` — **End Entity Flag 2**
+- `0x0400` — **End Entity Flag 3**
+- `0x0800` — **End Entity Flag 4**
+- `0x1000` — **End Entity Flag 5**
+- `0x2000` — **End Entity Flag 6**
+- `0x4000` — **End Entity Flag 7**
+- `0x8000` — **End Entity Flag 8**
 - Other bits **reserved** (must be `0` on encode; ignore on decode).
 - Implementations **must not** modify the `Flags` field when re‑emitting a certificate. Any reserved bits present in input data
   **must be preserved** exactly to avoid altering signed bytes.
@@ -75,7 +81,7 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
   - Cannot sign any certificates.
 
 ### End‑entity flags (non‑CA) inheritance
-- End‑entity flags are the non‑CA bits (e.g., `DOCUMENT_SIGNER (0x0100)`, `TEMPLATE_SIGNER (0x0200)`).
+- End‑entity flags are the non‑CA bits (e.g., flags 0x0100 through 0x8000).
 - A subject’s end‑entity flags must be a subset of its issuer’s end‑entity flags:
   - `Subject.EndEntityFlags ⊆ Issuer.EndEntityFlags`.
 
@@ -100,14 +106,14 @@ Notes:
 ### End‑Entity Inheritance Matrix
 Only illustrates the subset rule for end‑entity flags. CA‑level signing capability (issuer must have `CA` for non‑CA subjects, `INTERMEDIATE_CA` for CA‑level subjects) still applies separately.
 
-Legend: Document = `0x0100`, Template = `0x0200`.
+Legend: Flag1 = `0x0100`, Flag2 = `0x0200`, etc.
 
-| Issuer end‑entity flags | Subject: None | Subject: Document | Subject: Template | Subject: Document+Template |
-|------------------------:|:-------------:|:-----------------:|:-----------------:|:-------------------------:|
-| None                    | ✓             | ✗                 | ✗                 | ✗                         |
-| Document                | ✓             | ✓                 | ✗                 | ✗                         |
-| Template                | ✓             | ✗                 | ✓                 | ✗                         |
-| Document+Template       | ✓             | ✓                 | ✓                 | ✓                         |
+| Issuer end‑entity flags | Subject: None | Subject: Flag1 | Subject: Flag2 | Subject: Flag1+Flag2 |
+|------------------------:|:-------------:|:--------------:|:--------------:|:--------------------:|
+| None                    | ✓             | ✗              | ✗              | ✗                    |
+| Flag1                   | ✓             | ✓              | ✗              | ✗                    |
+| Flag2                   | ✓             | ✗              | ✓              | ✗                    |
+| Flag1+Flag2             | ✓             | ✓              | ✓              | ✓                    |
 
 Reminder: This matrix validates only the end‑entity subset requirement. The issuer must still have the appropriate CA‑level flag to sign the subject at all (see the Signing rules matrix above).
 
@@ -126,7 +132,7 @@ Notes
 5. For each child/parent pair (issuer = parent):
     - For non-CA children: Issuer must have `CA`.
     - For CA-level children (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must have `INTERMEDIATE_CA`.
-    - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
+    - End‑entity inheritance: For each end‑entity bit (0x0100 through 0x8000), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
 6. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
 
 ---

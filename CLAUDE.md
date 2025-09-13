@@ -45,13 +45,19 @@ The system implements a hierarchical certificate authority model using flags (`s
 - `ROOT_CA` (0x0001): Self-signed root certificate authorities
 - `INTERMEDIATE_CA` (0x0002): Enables signing of CA-level certificates when combined with `CA`
 - `CA` (0x0004): Required to sign any certificate; alone it can sign only end-entity (non-CA) certificates
-- `DOCUMENT_SIGNER` (0x0100): Can sign documents
-- `TEMPLATE_SIGNER` (0x0200): Can sign templates
+- `END_ENTITY_FLAG_1` (0x0100): Generic end-entity capability 1
+- `END_ENTITY_FLAG_2` (0x0200): Generic end-entity capability 2
+- `END_ENTITY_FLAG_3` (0x0400): Generic end-entity capability 3
+- `END_ENTITY_FLAG_4` (0x0800): Generic end-entity capability 4
+- `END_ENTITY_FLAG_5` (0x1000): Generic end-entity capability 5
+- `END_ENTITY_FLAG_6` (0x2000): Generic end-entity capability 6
+- `END_ENTITY_FLAG_7` (0x4000): Generic end-entity capability 7
+- `END_ENTITY_FLAG_8` (0x8000): Generic end-entity capability 8
 
 **Key Validation Rules:**
 - Signers must have `CA` to issue any certificates
 - Signing a certificate with CA-level flags additionally requires `INTERMEDIATE_CA`
-- End-entity flags (`DOCUMENT_SIGNER`, `TEMPLATE_SIGNER`) must be a subset of the signer's flags
+- End-entity flags (END_ENTITY_FLAG_1 through END_ENTITY_FLAG_8) must be a subset of the signer's flags
 - `ROOT_CA` certificates must be self-signed
 
 ### Directory Structure
