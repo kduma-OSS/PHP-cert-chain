@@ -41,6 +41,7 @@ $root_ca_1 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::ROOT_CA,
+        CertificateFlag::CA,
         CertificateFlag::INTERMEDIATE_CA,
         CertificateFlag::DOCUMENT_SIGNER,
         CertificateFlag::TEMPLATE_SIGNER
@@ -57,6 +58,8 @@ $root_ca_2 = new Certificate(
     ],
     flags: CertificateFlagsCollection::fromList([
         CertificateFlag::ROOT_CA,
+        CertificateFlag::CA,
+        CertificateFlag::INTERMEDIATE_CA,
         CertificateFlag::DOCUMENT_SIGNER,
     ]),
     signatures: []
