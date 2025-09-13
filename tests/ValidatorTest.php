@@ -533,6 +533,48 @@ class ValidatorTest extends TestCase
         $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag')));
     }
 
+    public function testIntermediateCaCannotSignNonCaCertificate()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
+        $intermediate_only = $this->makeTestCert('intermediate_only', [CertificateFlag::INTERMEDIATE_CA], ['root_ca']);
+        $leaf = $this->makeTestCert('leaf', [CertificateFlag::DOCUMENT_SIGNER], ['intermediate_only']);
+
+        $chain = new Chain([
+            $leaf,
+            $intermediate_only,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Non-CA certificate must be signed by a certificate with CA flag')));
+    }
+
+    public function testCertificateWithRootCaFlagMustBeSelfSigned()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
+        $fake_root = $this->makeTestCert('fake_root', [CertificateFlag::ROOT_CA, CertificateFlag::CA], ['root_ca']);
+
+        $chain = new Chain([
+            $fake_root,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with ROOT_CA flag must be self-signed')));
+    }
+
     public function testEndEntityFlagsMustBeSubsetOfSigner()
     {
         // Build: subject with DOCUMENT_SIGNER signed by signer with only CA (no end-entity flags) -> invalid

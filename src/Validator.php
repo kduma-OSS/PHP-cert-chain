@@ -197,9 +197,27 @@ class Validator
         // If target certificate is a CA certificate (has ROOT_CA, INTERMEDIATE_CA, or CA flags)
         $targetIsCA = $certificate->flags->isCA();
         
+        if ($certificate->flags->hasRootCA() && !$certificate->isSelfSigned()) {
+            $errors[] = new ValidationError(
+                'Certificate with ROOT_CA flag must be self-signed',
+                $certificate,
+                'certificate authority validation'
+            );
+        }
+
+        $signerHasCA = $signer->flags->hasCA();
+        $signerHasIntermediate = $signer->flags->hasIntermediateCA();
+
+        if (!$signerHasCA && !$signerHasIntermediate) {
+            $errors[] = new ValidationError(
+                'Certificate without CA flags cannot sign other certificates',
+                $signer,
+                'certificate authority validation'
+            );
+        }
+
         if ($targetIsCA) {
-            // CA certificates must be signed by a certificate with INTERMEDIATE_CA flag
-            if (!$signer->flags->hasIntermediateCA()) {
+            if (!$signerHasIntermediate) {
                 $errors[] = new ValidationError(
                     'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag',
                     $certificate,
@@ -207,9 +225,7 @@ class Validator
                 );
             }
         } else {
-            // Non-CA certificates can only be signed by certificates with CA flag
-            // ROOT_CA alone is not enough - it must also have CA flag to sign non-CA certificates
-            if (!$signer->flags->hasCA()) {
+            if (!$signerHasCA) {
                 $errors[] = new ValidationError(
                     'Non-CA certificate must be signed by a certificate with CA flag',
                     $certificate,
@@ -217,7 +233,7 @@ class Validator
                 );
             }
         }
-        
+
         return ['isValid' => empty($errors), 'errors' => $errors];
     }
     
