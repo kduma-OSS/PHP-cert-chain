@@ -166,3 +166,38 @@ CertificateChain = 1*Certificate        ; one or more Certificates back-to-back
 ; Each Certificate is defined as previously for AlgVer = 0x01
 ; The entire CertificateChain is Base64-encoded when transported as text.
 ```
+
+---
+
+## TrustStore binary format
+
+A TrustStore is a container for trusted root CA certificates used during chain validation. It has its own binary serialization format for storage and transport.
+
+### Binary layout
+
+| # | Field | Size | Notes |
+|---|---|---:|---|
+| 1 | **Magic** | 6 | Fixed `4e bb ac b5 e7 4a` (TrustStore identifier). |
+| 2 | **Certificates** | Variable | Zero or more complete Certificate structures concatenated back-to-back. |
+
+### Parsing rules
+
+- Decode the magic bytes to identify this as a TrustStore.
+- Parse certificates sequentially using the standard Certificate parsing rules until end of data.
+- Each certificate's length is determined from its internal structure (no explicit count or length fields).
+
+### Validation rules
+
+- **Only root CA certificates**: All certificates in a TrustStore must have the `ROOT_CA` flag and be self-signed.
+- **Unique KeyIds**: All certificates must have unique KeyIds within the TrustStore.
+- **Self-signing validation**: Each certificate's self-signature must be cryptographically valid.
+
+### Encoding rules
+
+- The entire TrustStore binary structure is **Base64-encoded** for text transport.
+- Each Certificate follows the standard certificate binary format defined above.
+- Certificates are stored in the order they were added to the TrustStore.
+
+### Usage
+
+TrustStores are used by the validator to determine which root certificates are trusted during chain validation. A certificate chain is only considered valid if it terminates in a root CA certificate present in the provided TrustStore.
