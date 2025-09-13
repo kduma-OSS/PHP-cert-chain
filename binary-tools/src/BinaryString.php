@@ -4,7 +4,7 @@ namespace KDuma\BinaryTools;
 
 readonly class BinaryString
 {
-    public function __construct(public string $value)
+    protected function __construct(public string $value)
     {
     }
 

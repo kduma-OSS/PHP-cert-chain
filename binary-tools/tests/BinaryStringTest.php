@@ -15,7 +15,7 @@ class BinaryStringTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->binaryString = new BinaryString("\x01\x02\x03\x04");
+        $this->binaryString = BinaryString::fromString("\x01\x02\x03\x04");
 
         parent::setUp();
     }
@@ -63,7 +63,7 @@ class BinaryStringTest extends TestCase
 
     public function testEquals()
     {
-        $this->assertTrue($this->binaryString->equals(new BinaryString("\x01\x02\x03\x04")));
-        $this->assertFalse($this->binaryString->equals(new BinaryString("\xFF\xFF\xFF\xFF")));
+        $this->assertTrue($this->binaryString->equals(BinaryString::fromString("\x01\x02\x03\x04")));
+        $this->assertFalse($this->binaryString->equals(BinaryString::fromString("\xFF\xFF\xFF\xFF")));
     }
 }

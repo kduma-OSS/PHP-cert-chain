@@ -47,7 +47,7 @@ readonly class PrivateKeyPair extends PublicKey
     {
         $writer = new BinaryWriter();
 
-        $writer->writeBytes(new BinaryString(self::MAGIC));
+        $writer->writeBytes(BinaryString::fromString(self::MAGIC));
 
         $writer->writeBytesWithLength($this->id);
         $writer->writeBytesWithLength($this->publicKey, true);
@@ -60,12 +60,12 @@ readonly class PrivateKeyPair extends PublicKey
     {
         $reader = new BinaryReader($data);
         $magic = $reader->readBytes(6);
-        if (!$magic->equals(new BinaryString(self::MAGIC))) {
+        if (!$magic->equals(BinaryString::fromString(self::MAGIC))) {
             throw new \InvalidArgumentException('Invalid magic bytes for PrivateKey');
         }
 
         try {
-            $id = new KeyId($reader->readBytesWithLength()->value);
+            $id = KeyId::fromString($reader->readBytesWithLength()->value);
             $publicKey = $reader->readBytesWithLength(true);
             $privateKey = $reader->readBytesWithLength(true);
         } catch (\RuntimeException $e) {

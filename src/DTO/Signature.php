@@ -68,7 +68,7 @@ readonly class Signature
             throw $e;
         }
 
-        return new self(new KeyId($keyId->value), $signature);
+        return new self(KeyId::fromString($keyId->value), $signature);
     }
 
     public static function fromBinary(BinaryString $binary, bool $fixed_length = false): self
@@ -79,7 +79,7 @@ readonly class Signature
 
     public static function make(BinaryString $data, PrivateKeyPair $keyPair): Signature
     {
-        $signature = new BinaryString(sodium_crypto_sign_detached($data->value, $keyPair->privateKey->value));
+        $signature = BinaryString::fromString(sodium_crypto_sign_detached($data->value, $keyPair->privateKey->value));
 
         return new self($keyPair->id, $signature);
     }

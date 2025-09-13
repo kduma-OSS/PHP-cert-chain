@@ -82,7 +82,7 @@ readonly class Certificate
     {
         $writer = new BinaryWriter();
 
-        $writer->writeBytes(new BinaryString(self::MAGIC)); // Magic bytes encoding PUBK in base64
+        $writer->writeBytes(BinaryString::fromString(self::MAGIC)); // Magic bytes encoding PUBK in base64
         $writer->writeByte(0x01); // Version
 
         $writer->writeBytes($this->key->id); // KeyId (16 bytes)
@@ -119,7 +119,7 @@ readonly class Certificate
     public static function fromBinaryReader(BinaryReader $reader): self
     {
         $magic = $reader->readBytes(3);
-        if (!$magic->equals(new BinaryString(self::MAGIC))) {
+        if (!$magic->equals(BinaryString::fromString(self::MAGIC))) {
             throw new \InvalidArgumentException('Invalid magic bytes for Certificate');
         }
 
@@ -146,12 +146,12 @@ readonly class Certificate
             throw new \InvalidArgumentException('Failed to parse Certificate: ' . $e->getMessage());
         }
 
-        if($reader->has_more_data && !$reader->peekBytes(3)->equals(new BinaryString(self::MAGIC))) {
+        if($reader->has_more_data && !$reader->peekBytes(3)->equals(BinaryString::fromString(self::MAGIC))) {
             throw new \InvalidArgumentException('Extra data found after parsing Certificate');
         }
 
         return new self(
-            new PublicKey(new KeyId($keyId->value), $PubKey),
+            new PublicKey(KeyId::fromString($keyId->value), $PubKey),
             $Desc->toString(),
             $UserDescriptors,
             $Flags,

@@ -8,7 +8,7 @@ class BinaryWriter
 
     public function getBuffer(): BinaryString
     {
-        return new BinaryString($this->buffer);
+        return BinaryString::fromString($this->buffer);
     }
 
     public function getLength(): int

@@ -45,7 +45,7 @@ Stream-like reader for parsing binary data with position tracking.
 use KDuma\BinaryTools\BinaryString;
 
 // Create from different sources
-$binary = new BinaryString("\x48\x65\x6c\x6c\x6f");
+$binary = BinaryString::fromString("\x48\x65\x6c\x6c\x6f");
 $fromString = BinaryString::fromString("Hello");
 $fromHex = BinaryString::fromHex("48656c6c6f");
 $fromBase64 = BinaryString::fromBase64("SGVsbG8=");
@@ -198,7 +198,6 @@ for ($i = 0; $i < $userCount; $i++) {
 
 | Method | Description |
 |--------|-------------|
-| `__construct(string $value)` | Create from raw binary data |
 | `toString(): string` | Get raw binary data |
 | `toHex(): string` | Convert to hexadecimal string |
 | `toBase64(): string` | Convert to base64 string |

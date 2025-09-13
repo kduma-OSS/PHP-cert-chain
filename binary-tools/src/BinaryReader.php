@@ -14,7 +14,7 @@ class BinaryReader
 
     public BinaryString $data {
         get {
-            return new BinaryString($this->_data);
+            return BinaryString::fromString($this->_data);
         }
     }
 
@@ -45,7 +45,7 @@ class BinaryReader
 
     public BinaryString $remaining_data {
         get {
-            return new BinaryString(substr($this->_data, $this->position));
+            return BinaryString::fromString(substr($this->_data, $this->position));
         }
     }
 
@@ -72,8 +72,8 @@ class BinaryReader
 
         $result = substr($this->_data, $this->position, $count);
         $this->position += $count;
-        
-        return new BinaryString($result);
+
+        return BinaryString::fromString($result);
     }
 
     public function readBytesWithLength(bool $use16BitLength = false): BinaryString
@@ -138,7 +138,7 @@ class BinaryReader
             throw new RuntimeException('Unexpected end of data while peeking ' . $count . ' bytes');
         }
 
-        return new BinaryString(substr($this->_data, $this->position, $count));
+        return BinaryString::fromString(substr($this->_data, $this->position, $count));
     }
 
     public function skip(int $count): void

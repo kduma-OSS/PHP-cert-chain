@@ -42,7 +42,7 @@ readonly class PublicKey
     {
         $writer = new BinaryWriter();
 
-        $writer->writeBytes(new BinaryString(self::MAGIC)); // Magic bytes encoding PUBK in base64
+        $writer->writeBytes(BinaryString::fromString(self::MAGIC)); // Magic bytes encoding PUBK in base64
 
         $writer->writeBytesWithLength($this->id);
         $writer->writeBytesWithLength($this->publicKey, true);
@@ -54,12 +54,12 @@ readonly class PublicKey
     {
         $reader = new BinaryReader($data);
         $magic = $reader->readBytes(3);
-        if (!$magic->equals(new BinaryString(self::MAGIC))) {
+        if (!$magic->equals(BinaryString::fromString(self::MAGIC))) {
             throw new \InvalidArgumentException('Invalid magic bytes for PublicKey');
         }
 
         try {
-            $id = new KeyId($reader->readBytesWithLength()->value);
+            $id = KeyId::fromString($reader->readBytesWithLength()->value);
             $publicKey = $reader->readBytesWithLength(true);
         } catch (\RuntimeException $e) {
             throw new \InvalidArgumentException('Failed to parse PublicKey: ' . $e->getMessage());

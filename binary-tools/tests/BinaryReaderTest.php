@@ -15,7 +15,7 @@ class BinaryReaderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->reader = new BinaryReader(new BinaryString("\x01\x02\x03\x04"));
+        $this->reader = new BinaryReader(BinaryString::fromString("\x01\x02\x03\x04"));
 
         parent::setUp();
     }
@@ -37,7 +37,7 @@ class BinaryReaderTest extends TestCase
 
     public function testReadBytes()
     {
-        $this->assertEquals(new BinaryString("\x01\x02\x03"), $this->reader->readBytes(3));
+        $this->assertEquals(BinaryString::fromString("\x01\x02\x03"), $this->reader->readBytes(3));
         $this->assertEquals(3, $this->reader->position);
 
 
@@ -62,18 +62,18 @@ class BinaryReaderTest extends TestCase
 
     public function testReadBytesWithLength()
     {
-        $this->reader = new BinaryReader(new BinaryString("\x00\x02\x03\x04"));
+        $this->reader = new BinaryReader(BinaryString::fromString("\x00\x02\x03\x04"));
 
         $this->reader->seek(1);
-        $this->assertEquals(new BinaryString("\x03\x04"), $this->reader->readBytesWithLength());
+        $this->assertEquals(BinaryString::fromString("\x03\x04"), $this->reader->readBytesWithLength());
         $this->assertEquals(4, $this->reader->position);
 
         $this->reader->seek(0);
-        $this->assertEquals(new BinaryString("\x03\x04"), $this->reader->readBytesWithLength(true));
+        $this->assertEquals(BinaryString::fromString("\x03\x04"), $this->reader->readBytesWithLength(true));
         $this->assertEquals(4, $this->reader->position);
 
         $this->reader->seek(0);
-        $this->assertEquals(new BinaryString(""), $this->reader->readBytesWithLength());
+        $this->assertEquals(BinaryString::fromString(""), $this->reader->readBytesWithLength());
         $this->assertEquals(1, $this->reader->position);
 
         try {
@@ -97,7 +97,7 @@ class BinaryReaderTest extends TestCase
 
     public function testReadUint16BE()
     {
-        $this->reader = new BinaryReader(new BinaryString("\x04\xd2"));
+        $this->reader = new BinaryReader(BinaryString::fromString("\x04\xd2"));
         $this->assertEquals(1234, $this->reader->readUint16BE());
         $this->assertEquals(2, $this->reader->position);
     }
@@ -144,7 +144,7 @@ class BinaryReaderTest extends TestCase
 
     public function testPeekBytes()
     {
-        $this->assertEquals(new BinaryString("\x01\x02\x03"), $this->reader->peekBytes(3));
+        $this->assertEquals(BinaryString::fromString("\x01\x02\x03"), $this->reader->peekBytes(3));
         $this->assertEquals(0, $this->reader->position);
 
 
@@ -169,8 +169,8 @@ class BinaryReaderTest extends TestCase
 
     public function testReadString()
     {
-        $this->reader = new BinaryReader(new BinaryString("TEST"));
-        $this->assertEquals(new BinaryString("TEST"), $this->reader->readString(4));
+        $this->reader = new BinaryReader(BinaryString::fromString("TEST"));
+        $this->assertEquals(BinaryString::fromString("TEST"), $this->reader->readString(4));
         $this->assertEquals(4, $this->reader->position);
 
         try {
@@ -182,7 +182,7 @@ class BinaryReaderTest extends TestCase
             $this->assertEquals(0, $this->reader->position);
         }
 
-        $this->reader = new BinaryReader(new BinaryString("\xFF\xFF"));
+        $this->reader = new BinaryReader(BinaryString::fromString("\xFF\xFF"));
         try {
             $this->reader->seek(0);
             $this->reader->readString(2);
@@ -196,18 +196,18 @@ class BinaryReaderTest extends TestCase
 
     public function testReadStringWithLength()
     {
-        $this->reader = new BinaryReader(new BinaryString("\x00\x03TEST"));
+        $this->reader = new BinaryReader(BinaryString::fromString("\x00\x03TEST"));
 
         $this->reader->seek(1);
-        $this->assertEquals(new BinaryString("TES"), $this->reader->readStringWithLength());
+        $this->assertEquals(BinaryString::fromString("TES"), $this->reader->readStringWithLength());
         $this->assertEquals(5, $this->reader->position);
 
         $this->reader->seek(0);
-        $this->assertEquals(new BinaryString("TES"), $this->reader->readStringWithLength(true));
+        $this->assertEquals(BinaryString::fromString("TES"), $this->reader->readStringWithLength(true));
         $this->assertEquals(5, $this->reader->position);
 
         $this->reader->seek(0);
-        $this->assertEquals(new BinaryString(""), $this->reader->readStringWithLength());
+        $this->assertEquals(BinaryString::fromString(""), $this->reader->readStringWithLength());
         $this->assertEquals(1, $this->reader->position);
 
         try {
@@ -228,7 +228,7 @@ class BinaryReaderTest extends TestCase
             $this->assertEquals(1, $this->reader->position);
         }
 
-        $this->reader = new BinaryReader(new BinaryString("\x00\x03T\xFFEST"));
+        $this->reader = new BinaryReader(BinaryString::fromString("\x00\x03T\xFFEST"));
 
         try {
             $this->reader->seek(1);
@@ -252,18 +252,18 @@ class BinaryReaderTest extends TestCase
     public function testGetRemainingData()
     {
         $this->reader->seek(1);
-        $this->assertEquals(new BinaryString("\x02\x03\x04"), $this->reader->remaining_data);
+        $this->assertEquals(BinaryString::fromString("\x02\x03\x04"), $this->reader->remaining_data);
         $this->assertEquals(1, $this->reader->position);
 
         $this->reader->seek(4);
-        $this->assertEquals(new BinaryString(""), $this->reader->remaining_data);
+        $this->assertEquals(BinaryString::fromString(""), $this->reader->remaining_data);
         $this->assertEquals(4, $this->reader->position);
     }
 
     public function testGetData()
     {
         $this->reader->seek(1);
-        $this->assertEquals(new BinaryString("\x01\x02\x03\x04"), $this->reader->data);
+        $this->assertEquals(BinaryString::fromString("\x01\x02\x03\x04"), $this->reader->data);
         $this->assertEquals(1, $this->reader->position);
     }
 

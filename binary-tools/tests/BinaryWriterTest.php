@@ -33,7 +33,7 @@ class BinaryWriterTest extends TestCase
     public function testWriteBytes()
     {
         $this->writer->reset();
-        $this->writer->writeBytes(new BinaryString("\x05\x06\x07"));
+        $this->writer->writeBytes(BinaryString::fromString("\x05\x06\x07"));
         $this->assertEquals("\x05\x06\x07", $this->writer->getBuffer()->toString());
     }
 
@@ -114,20 +114,20 @@ class BinaryWriterTest extends TestCase
     public function testWriteBytesWithLength()
     {
         $this->writer->reset();
-        $this->writer->writeBytesWithLength(new BinaryString("\x05\x06\x07"));
+        $this->writer->writeBytesWithLength(BinaryString::fromString("\x05\x06\x07"));
         $this->assertEquals("\x03\x05\x06\x07", $this->writer->getBuffer()->toString());
 
         $this->writer->reset();
-        $this->writer->writeBytesWithLength(new BinaryString("\x05\x06\x07"), true);
+        $this->writer->writeBytesWithLength(BinaryString::fromString("\x05\x06\x07"), true);
         $this->assertEquals("\x00\x03\x05\x06\x07", $this->writer->getBuffer()->toString());
 
         $this->writer->reset();
-        $this->writer->writeBytesWithLength(new BinaryString(str_repeat("\x00", 255)));
+        $this->writer->writeBytesWithLength(BinaryString::fromString(str_repeat("\x00", 255)));
         $this->assertEquals(1 + 255, $this->writer->getLength());
 
         try {
             $this->writer->reset();
-            $this->writer->writeBytesWithLength(new BinaryString(str_repeat("\x00", 255 + 1)));
+            $this->writer->writeBytesWithLength(BinaryString::fromString(str_repeat("\x00", 255 + 1)));
             $this->fail("Expected exception not thrown");
         } catch (\InvalidArgumentException $exception) {
             $this->assertEquals('String too long for 8-bit length field', $exception->getMessage());
@@ -135,12 +135,12 @@ class BinaryWriterTest extends TestCase
         }
 
         $this->writer->reset();
-        $this->writer->writeBytesWithLength(new BinaryString(str_repeat("\x00", 65535)), true);
+        $this->writer->writeBytesWithLength(BinaryString::fromString(str_repeat("\x00", 65535)), true);
         $this->assertEquals(2 + 65535, $this->writer->getLength());
 
         try {
             $this->writer->reset();
-            $this->writer->writeBytesWithLength(new BinaryString(str_repeat("\x00", 65535 + 1)), true);
+            $this->writer->writeBytesWithLength(BinaryString::fromString(str_repeat("\x00", 65535 + 1)), true);
             $this->fail("Expected exception not thrown");
         } catch (\InvalidArgumentException $exception) {
             $this->assertEquals('String too long for 16-bit length field', $exception->getMessage());
@@ -151,12 +151,12 @@ class BinaryWriterTest extends TestCase
     public function testWriteStringWithLength()
     {
         $this->writer->reset();
-        $this->writer->writeStringWithLength(new BinaryString("abc"));
+        $this->writer->writeStringWithLength(BinaryString::fromString("abc"));
         $this->assertEquals("\x03abc", $this->writer->getBuffer()->toString());
 
         try {
             $this->writer->reset();
-            $this->writer->writeStringWithLength(new BinaryString("\x00\xFF")); // Invalid UTF-8
+            $this->writer->writeStringWithLength(BinaryString::fromString("\x00\xFF")); // Invalid UTF-8
             $this->fail("Expected exception not thrown");
         } catch (\InvalidArgumentException $exception) {
             $this->assertEquals('String must be valid UTF-8', $exception->getMessage());
@@ -167,12 +167,12 @@ class BinaryWriterTest extends TestCase
     public function testWriteString()
     {
         $this->writer->reset();
-        $this->writer->writeString(new BinaryString("abc"));
+        $this->writer->writeString(BinaryString::fromString("abc"));
         $this->assertEquals("abc", $this->writer->getBuffer()->toString());
 
         try {
             $this->writer->reset();
-            $this->writer->writeString(new BinaryString("\x00\xFF")); // Invalid UTF-8
+            $this->writer->writeString(BinaryString::fromString("\x00\xFF")); // Invalid UTF-8
             $this->fail("Expected exception not thrown");
         } catch (\InvalidArgumentException $exception) {
             $this->assertEquals('String must be valid UTF-8', $exception->getMessage());

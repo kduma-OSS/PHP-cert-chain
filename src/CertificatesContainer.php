@@ -31,7 +31,7 @@ abstract readonly class CertificatesContainer
     {
         $reader = new BinaryReader($data);
 
-        $requiredMagic = new BinaryString(static::getMagicBytes());
+        $requiredMagic = BinaryString::fromString(static::getMagicBytes());
         if($requiredMagic->size() > 0) {
             $actualMagic = $reader->readBytes($requiredMagic->size());
             if (!$actualMagic->equals($requiredMagic)) {
@@ -51,7 +51,7 @@ abstract readonly class CertificatesContainer
     {
         $writer = new BinaryWriter();
 
-        $writer->writeBytes(new BinaryString(static::getMagicBytes()));
+        $writer->writeBytes(BinaryString::fromString(static::getMagicBytes()));
 
         foreach ($this->certificates as $certificate) {
             $writer->writeBytes($certificate->toBinary());

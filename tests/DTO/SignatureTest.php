@@ -25,7 +25,7 @@ class SignatureTest extends TestCase
     protected function setUp(): void
     {
         $this->key = PrivateKeyPair::fromBinary(BinaryString::fromBase64('PrivateKENf4Mt80fKbZndq4WziH2zUAIMNIwfS7VADNKBb14ZjQUJrtSptgu8/B0ElVStKE6g5XAEAH1SWnxwLKT/Xy4fp4gSlxSzDKq/Q9Oprda/NAuhACAsNIwfS7VADNKBb14ZjQUJrtSptgu8/B0ElVStKE6g5X'));
-        $this->data = new BinaryString("TEST");
+        $this->data = BinaryString::fromString("TEST");
         $this->signature = Signature::fromBinary(BinaryString::fromHex(self::SIGNATURE_HEX));
 
         parent::setUp();
@@ -37,14 +37,14 @@ class SignatureTest extends TestCase
         $this->assertEquals(BinaryString::fromHex(self::SIGNATURE_HEX), $this->signature->toBinary());
 
         try {
-            new Signature(new KeyId(''), $this->signature->signature);
+            new Signature(KeyId::fromString(''), $this->signature->signature);
             $this->fail('Expected exception not thrown');
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Signer KeyId cannot be empty', $e->getMessage());
         }
 
         try {
-            new Signature($this->signature->keyId, new BinaryString(''));
+            new Signature($this->signature->keyId, BinaryString::fromString(''));
             $this->fail('Expected exception not thrown');
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Signature cannot be empty', $e->getMessage());
@@ -54,8 +54,8 @@ class SignatureTest extends TestCase
     public function testEquals()
     {
         $same = new Signature($this->signature->keyId, $this->signature->signature);
-        $differentKeyId = new Signature(new KeyId(str_repeat("\x00", 16)), $this->signature->signature);
-        $differentSignature = new Signature($this->signature->keyId, new BinaryString(str_repeat("\x00", 64)));
+        $differentKeyId = new Signature(KeyId::fromString(str_repeat("\x00", 16)), $this->signature->signature);
+        $differentSignature = new Signature($this->signature->keyId, BinaryString::fromString(str_repeat("\x00", 64)));
 
         $this->assertTrue($this->signature->equals($same));
         $this->assertFalse($this->signature->equals($differentKeyId));
@@ -95,7 +95,7 @@ class SignatureTest extends TestCase
         $this->assertEquals(self::FIXED_SIGNATURE_HEX, $this->signature->toBinary(true)->toHex());
 
         try {
-            $invalidSignature = new Signature($this->signature->keyId, new BinaryString('short'));
+            $invalidSignature = new Signature($this->signature->keyId, BinaryString::fromString('short'));
             $invalidSignature->toBinary(true);
             $this->fail('Expected exception not thrown');
         } catch (\InvalidArgumentException $e) {
@@ -103,7 +103,7 @@ class SignatureTest extends TestCase
         }
 
         try {
-            $invalidKeyId = new Signature(new KeyId('short'), $this->signature->signature);
+            $invalidKeyId = new Signature(KeyId::fromString('short'), $this->signature->signature);
             $invalidKeyId->toBinary(true);
             $this->fail('Expected exception not thrown');
         } catch (\InvalidArgumentException $e) {

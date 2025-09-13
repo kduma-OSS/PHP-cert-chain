@@ -90,7 +90,7 @@ class CertificateTest extends TestCase
         $this->assertEquals($cert->getSelfSignature(), $selfSignature);
         
         // Try with a non-existent key ID
-        $fakeKeyId = new KeyId(str_repeat("\x00", 16));
+        $fakeKeyId = KeyId::fromString(str_repeat("\x00", 16));
         $noSignature = $cert->getSignatureByKeyId($fakeKeyId);
         $this->assertNull($noSignature);
     }
@@ -98,8 +98,8 @@ class CertificateTest extends TestCase
     public function test__construct()
     {
         // Valid certificate construction
-        $keyId = new KeyId(str_repeat("\x01", 16));
-        $publicKey = new PublicKey($keyId, new BinaryString(str_repeat("\x02", 32)));
+        $keyId = KeyId::fromString(str_repeat("\x01", 16));
+        $publicKey = new PublicKey($keyId, BinaryString::fromString(str_repeat("\x02", 32)));
         $userDescriptors = [new UserDescriptor(DescriptorType::DOMAIN, 'example.com')];
         $flags = CertificateFlagsCollection::fromInt(0x0007);
         $signatures = [];
@@ -110,8 +110,8 @@ class CertificateTest extends TestCase
         
         // Test invalid key ID (empty)
         try {
-            $emptyKeyId = new KeyId('');
-            $invalidPublicKey = new PublicKey($emptyKeyId, new BinaryString(str_repeat("\x02", 32)));
+            $emptyKeyId = KeyId::fromString('');
+            $invalidPublicKey = new PublicKey($emptyKeyId, BinaryString::fromString(str_repeat("\x02", 32)));
             new Certificate($invalidPublicKey, 'Test', $userDescriptors, $flags, $signatures);
             $this->fail('Expected InvalidArgumentException for empty key ID');
         } catch (\InvalidArgumentException $e) {
@@ -120,8 +120,8 @@ class CertificateTest extends TestCase
         
         // Test invalid key ID (wrong size)
         try {
-            $wrongSizeKeyId = new KeyId(str_repeat("\x01", 10));
-            $invalidPublicKey = new PublicKey($wrongSizeKeyId, new BinaryString(str_repeat("\x02", 32)));
+            $wrongSizeKeyId = KeyId::fromString(str_repeat("\x01", 10));
+            $invalidPublicKey = new PublicKey($wrongSizeKeyId, BinaryString::fromString(str_repeat("\x02", 32)));
             new Certificate($invalidPublicKey, 'Test', $userDescriptors, $flags, $signatures);
             $this->fail('Expected InvalidArgumentException for wrong size key ID');
         } catch (\InvalidArgumentException $e) {
@@ -130,8 +130,8 @@ class CertificateTest extends TestCase
         
         // Test invalid public key (empty)
         try {
-            $validKeyId = new KeyId(str_repeat("\x01", 16));
-            $invalidPublicKey = new PublicKey($validKeyId, new BinaryString(''));
+            $validKeyId = KeyId::fromString(str_repeat("\x01", 16));
+            $invalidPublicKey = new PublicKey($validKeyId, BinaryString::fromString(''));
             new Certificate($invalidPublicKey, 'Test', $userDescriptors, $flags, $signatures);
             $this->fail('Expected InvalidArgumentException for empty public key');
         } catch (\InvalidArgumentException $e) {
@@ -140,8 +140,8 @@ class CertificateTest extends TestCase
         
         // Test invalid public key (wrong size)
         try {
-            $validKeyId = new KeyId(str_repeat("\x01", 16));
-            $invalidPublicKey = new PublicKey($validKeyId, new BinaryString(str_repeat("\x02", 20)));
+            $validKeyId = KeyId::fromString(str_repeat("\x01", 16));
+            $invalidPublicKey = new PublicKey($validKeyId, BinaryString::fromString(str_repeat("\x02", 20)));
             new Certificate($invalidPublicKey, 'Test', $userDescriptors, $flags, $signatures);
             $this->fail('Expected InvalidArgumentException for wrong size public key');
         } catch (\InvalidArgumentException $e) {
@@ -222,7 +222,7 @@ class CertificateTest extends TestCase
 
         // Test invalid binary (wrong magic)
         try {
-            $invalidMagic = new BinaryString('ABC' . str_repeat('x', 100));
+            $invalidMagic = BinaryString::fromString('ABC' . str_repeat('x', 100));
             Certificate::fromBinary($invalidMagic);
             $this->fail('Expected InvalidArgumentException for wrong magic bytes');
         } catch (\InvalidArgumentException $e) {
