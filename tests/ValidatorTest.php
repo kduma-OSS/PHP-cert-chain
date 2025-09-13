@@ -337,4 +337,78 @@ class ValidatorTest extends TestCase
         $this->assertTrue($result->isValid);
         $this->assertCount(0, $result->warnings); // Current test data produces single path
     }
+
+    public function testThatIntermediateCaCantSignNonCaCertificates()
+    {
+        // Valid Case
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
+
+        $chain = new Chain([
+            $signer,
+            $intermediate_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertTrue($result->isValid);
+
+        // Invalid Case
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
+
+        $chain = new Chain([
+            $signer,
+            $intermediate_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+    }
+
+    public function testThatRootCaCantSignNonCaCertificates()
+    {
+        // Valid Case
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+
+        $chain = new Chain([
+            $signer,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertTrue($result->isValid);
+
+        // Invalid Case
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+
+        $chain = new Chain([
+            $signer,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+    }
 }

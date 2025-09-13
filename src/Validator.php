@@ -133,6 +133,20 @@ class Validator
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             }
             // @codeCoverageIgnoreEnd
+            
+            // Validate certificate authority rules
+            $authorityValidation = self::validateCertificateAuthority($currentCert, $signerCert);
+            if (!$authorityValidation['isValid']) {
+                $errors = array_merge($errors, $authorityValidation['errors']);
+                return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
+            }
+            
+            // Validate end-entity flag inheritance
+            $inheritanceValidation = self::validateEndEntityFlagInheritance($currentCert, $signerCert);
+            if (!$inheritanceValidation['isValid']) {
+                $errors = array_merge($errors, $inheritanceValidation['errors']);
+                return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
+            }
         }
         
         // Verify root certificate's self-signature if it exists
@@ -157,5 +171,76 @@ class Validator
         }
         
         return ['isValid' => true, 'errors' => $errors, 'warnings' => $warnings];
+    }
+    
+    /**
+     * Validate that a signer certificate has proper authority to sign a target certificate
+     * 
+     * @param Certificate $certificate The certificate being signed
+     * @param Certificate $signer The certificate doing the signing
+     * @return array{isValid: bool, errors: ValidationError[]}
+     */
+    private static function validateCertificateAuthority(Certificate $certificate, Certificate $signer): array
+    {
+        $errors = [];
+        
+        // If target certificate is a CA certificate (has ROOT_CA, INTERMEDIATE_CA, or CA flags)
+        $targetIsCA = $certificate->flags->isCA();
+        
+        if ($targetIsCA) {
+            // Only INTERMEDIATE_CA and ROOT_CA can sign CA certificates
+            if (!$signer->flags->hasIntermediateCA() && !$signer->flags->hasRootCA()) {
+                $errors[] = new ValidationError(
+                    'Certificate with CA flags can only be signed by INTERMEDIATE_CA or ROOT_CA',
+                    $certificate,
+                    'certificate authority validation'
+                );
+            }
+        } else {
+            // Non-CA certificates can only be signed by certificates with CA flag
+            // ROOT_CA alone is not enough - it must also have CA flag to sign non-CA certificates
+            if (!$signer->flags->hasCA()) {
+                $errors[] = new ValidationError(
+                    'Non-CA certificate must be signed by a certificate with CA flag',
+                    $certificate,
+                    'certificate authority validation'
+                );
+            }
+        }
+        
+        return ['isValid' => empty($errors), 'errors' => $errors];
+    }
+    
+    /**
+     * Validate that a certificate's end-entity flags inherit properly from its signer
+     * 
+     * @param Certificate $certificate The certificate being signed
+     * @param Certificate $signer The certificate doing the signing
+     * @return array{isValid: bool, errors: ValidationError[]}
+     */
+    private static function validateEndEntityFlagInheritance(Certificate $certificate, Certificate $signer): array
+    {
+        $errors = [];
+        
+        // ROOT_CA certificates (self-signed) can have any end-entity flags
+        if ($signer->isRootCA() && $certificate->key->id->equals($signer->key->id)) {
+            return ['isValid' => true, 'errors' => $errors];
+        }
+        
+        // Get end-entity flags for both certificates
+        $certificateEndEntityFlags = $certificate->flags->getEndEntityFlags();
+        $signerEndEntityFlags = $signer->flags->getEndEntityFlags();
+        
+        // Certificate's end-entity flags must be a subset of signer's end-entity flags
+        if (!$certificateEndEntityFlags->isSubsetOf($signerEndEntityFlags)) {
+            $errors[] = new ValidationError(
+                'Certificate end-entity flags must be a subset of signer\'s end-entity flags. Certificate has: ' .
+                $certificateEndEntityFlags->toString() . ', Signer has: ' . $signerEndEntityFlags->toString(),
+                $certificate,
+                'end-entity flag inheritance validation'
+            );
+        }
+        
+        return ['isValid' => empty($errors), 'errors' => $errors];
     }
 }
