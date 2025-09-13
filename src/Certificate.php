@@ -158,4 +158,23 @@ readonly class Certificate
             $Signatures
         );
     }
+
+    // @codeCoverageIgnoreStart
+    public function with(
+        ?PublicKey $key = null,
+        ?string $description = null,
+        ?array $userDescriptors = null,
+        ?CertificateFlagsCollection $flags = null,
+        ?array $signatures = null
+    ): Certificate
+    {
+        return new self(
+            $key ?? $this->key,
+            $description ?? $this->description,
+            $userDescriptors ?? $this->userDescriptors,
+            $flags ?? $this->flags,
+            $signatures ?? $this->signatures
+        );
+    }
+    // @codeCoverageIgnoreEnd
 }
