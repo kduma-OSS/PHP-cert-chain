@@ -35,23 +35,26 @@ jobs:
 
       - name: Check if code style fixes are needed
         id: check
+        run: composer lint
+        continue-on-error: true
+
+      - name: Set fixes needed flag
+        id: fixes
         run: |
-          composer lint
-          if [ $? -eq 0 ]; then
+          if [ "${{ steps.check.outcome }}" = "success" ]; then
             echo "fixes_needed=false" >> $GITHUB_OUTPUT
             echo "✅ No code style fixes needed"
           else
             echo "fixes_needed=true" >> $GITHUB_OUTPUT
             echo "🔧 Code style fixes needed"
           fi
-        continue-on-error: true
 
       - name: Fix code style
-        if: steps.check.outputs.fixes_needed == 'true'
+        if: steps.fixes.outputs.fixes_needed == 'true'
         run: composer fix
 
       - name: Check for changes
-        if: steps.check.outputs.fixes_needed == 'true'
+        if: steps.fixes.outputs.fixes_needed == 'true'
         id: changes
         run: |
           if [ -n "$(git diff --name-only)" ]; then
@@ -64,7 +67,7 @@ jobs:
           fi
 
       - name: Commit and push fixes
-        if: steps.check.outputs.fixes_needed == 'true' && steps.changes.outputs.changes_made == 'true'
+        if: steps.fixes.outputs.fixes_needed == 'true' && steps.changes.outputs.changes_made == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -77,7 +80,7 @@ jobs:
           git push
 
       - name: Comment on PR
-        if: steps.check.outputs.fixes_needed == 'true' && steps.changes.outputs.changes_made == 'true'
+        if: steps.fixes.outputs.fixes_needed == 'true' && steps.changes.outputs.changes_made == 'true'
         uses: actions/github-script@v7
         with:
           script: |
