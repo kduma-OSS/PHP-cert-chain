@@ -21,7 +21,15 @@ class Validator
             $errors[] = new ValidationError('No certificates in chain to validate');
             return new ValidationResult($errors, $warnings, $validatedChain, false);
         }
-        
+
+        // Ensure every certificate in the chain has at least one signature
+        foreach ($chain->certificates as $cert) {
+            if (count($cert->signatures) === 0) {
+                $errors[] = new ValidationError('Certificate has no signatures', $cert, 'signature presence');
+                return new ValidationResult($errors, $warnings, $validatedChain, false);
+            }
+        }
+
         // Build all possible paths from the first certificate to root CAs
         $paths = $chain->buildPaths($certificate);
         
