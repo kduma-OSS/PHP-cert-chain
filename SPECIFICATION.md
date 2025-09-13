@@ -30,7 +30,7 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
 | 9 | **For i: ValLen** | 2 | UTF-8 value length (UINT16BE). |
 | 10 | **For i: Value** | ValLen | UTF-8. |
 | 11 | **Flags** | 2 | Permission bitmask (see table). **TBS ends here.** |
-| 12 | **SigCount** | 1 | **Must be ≥ 1**. |
+| 12 | **SigCount** | 1 | Number of signatures. May be `0`; such certificates must be rejected during validation. |
 | 13 | **For j in 1..M: SignKeyId** | 16 | Signer’s KeyId (same 16-byte rule). **No length field.** |
 | 14 | **For j: Signature** | 64 | Raw Ed25519 signature. **No length field.** |
 
@@ -119,13 +119,14 @@ Notes
 ## Chain validation algorithm
 
 1. Verify structure and lengths.
-2. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
-3. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
-4. For each child/parent pair (issuer = parent):
+2. Ensure each certificate has at least one signature.
+3. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
+4. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
+5. For each child/parent pair (issuer = parent):
    - If child is CA‑level (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must have `INTERMEDIATE_CA`.
    - If child is non‑CA (no CA‑level flags): issuer must have `CA`.
    - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
-5. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
+6. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
 
 ---
 
