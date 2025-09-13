@@ -496,7 +496,6 @@ public function has(CertificateFlag $flag): bool;
 public function hasRootCA(): bool;
 public function hasIntermediateCA(): bool;
 public function hasCA(): bool;
-public function hasEndEntityFlag1(): bool; // through hasEndEntityFlag8()
 public function isCA(): bool;
 public function getEndEntityFlags(): CertificateFlagsCollection;
 public function getCAFlags(): CertificateFlagsCollection;
@@ -653,10 +652,10 @@ function validateCertificateForPurpose(Certificate $cert, string $purpose): bool
     $flags = $cert->flags;
 
     return match ($purpose) {
-        'document-signing' => $flags->hasEndEntityFlag1(),
-        'code-signing' => $flags->hasEndEntityFlag2(),
-        'email-encryption' => $flags->hasEndEntityFlag3(),
-        'server-auth' => $flags->hasEndEntityFlag4(),
+        'document-signing' => $flags->has(CertificateFlag::END_ENTITY_FLAG_1),
+        'code-signing' => $flags->has(CertificateFlag::END_ENTITY_FLAG_2),
+        'email-encryption' => $flags->has(CertificateFlag::END_ENTITY_FLAG_3),
+        'server-auth' => $flags->has(CertificateFlag::END_ENTITY_FLAG_4),
         default => false
     };
 }
