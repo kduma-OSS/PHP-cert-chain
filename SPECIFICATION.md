@@ -47,6 +47,8 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
 - `0x0100` — **Document Signer**
 - `0x0200` — **Template Signer**
 - Other bits **reserved** (must be `0` on encode; ignore on decode).
+- Implementations **must not** modify the `Flags` field when re‑emitting a certificate. Any reserved bits present in input data
+  **must be preserved** exactly to avoid altering signed bytes.
 
 ---
 
