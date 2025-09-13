@@ -120,6 +120,8 @@ Reminder: This matrix validates only the end‑entity subset requirement. The is
 Notes
 - A certificate with `ROOT_CA` must be self‑signed, but it may also carry `INTERMEDIATE_CA` or `CA` (or both).
 - The presence of CA‑level flags does not prevent a certificate from also carrying end‑entity flags; those end‑entity bits govern what end‑entity flags it may delegate to subjects, not necessarily whether it acts as an end‑entity itself.
+- **Certificate uniqueness**: Each certificate in a chain must have a unique `KeyId`. Self‑signed `ROOT_CA` certificates can only appear as the final (root) certificate in a chain, never in the middle.
+- **End‑entity inheritance**: The subset rule (`Child.EndEntity ⊆ Issuer.EndEntity`) applies to all certificate pairs in a chain without exception, including self‑signed certificates.
 
 ---
 
@@ -128,12 +130,13 @@ Notes
 1. Verify structure and lengths.
 2. Ensure each certificate has at least one signature.
 3. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
-4. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
-5. For each child/parent pair (issuer = parent):
+4. Verify that all certificates in the chain have unique `KeyId` values. No two certificates in the same chain may share the same `KeyId`.
+5. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
+6. For each child/parent pair (issuer = parent):
     - For non-CA children: Issuer must have `CA`.
     - For CA-level children (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must have `INTERMEDIATE_CA`.
-    - End‑entity inheritance: For each end‑entity bit (0x0100 through 0x8000), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
-6. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
+    - End‑entity inheritance: For each end‑entity bit (0x0100 through 0x8000), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`). This validation applies to **all** certificate pairs without exception.
+7. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
 
 ---
 

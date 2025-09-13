@@ -114,6 +114,18 @@ class Validator
             }
         }
 
+        // Verify that all certificates in the path have unique KeyIds
+        // SPECIFICATION.md: Chain validation algorithm — certificates in a chain must have unique KeyIds
+        $seenKeyIds = [];
+        foreach ($path as $certificate) {
+            $keyIdString = $certificate->key->id->toString();
+            if (in_array($keyIdString, $seenKeyIds, true)) {
+                $errors[] = new ValidationError('Certificate chain contains duplicate KeyIds', $certificate, 'unique key id validation');
+                return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
+            }
+            $seenKeyIds[] = $keyIdString;
+        }
+
         // Verify the last certificate in path is a root CA
         $rootCert = end($path);
         if (!$rootCert->isRootCA()) {
@@ -262,11 +274,6 @@ class Validator
     private static function validateEndEntityFlagInheritance(Certificate $certificate, Certificate $signer): array
     {
         $errors = [];
-
-        // ROOT_CA certificates (self-signed) can have any end-entity flags
-        if ($signer->isRootCA() && $certificate->key->id->equals($signer->key->id)) {
-            return ['isValid' => true, 'errors' => $errors];
-        }
 
         // Get end-entity flags for both certificates
         // SPECIFICATION.md: "End‑Entity Inheritance Matrix" and

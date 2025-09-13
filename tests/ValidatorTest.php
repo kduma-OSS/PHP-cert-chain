@@ -824,9 +824,9 @@ class ValidatorTest extends TestCase
         $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
     }
 
-    public function testRootSelfSignedAllowsAnyEndEntityFlagsForSameKey()
+    public function testDuplicateKeyIdsInChainAreRejected()
     {
-        // Hit the early return in validateEndEntityFlagInheritance when signer is self-signed ROOT_CA
+        // Test that chains with duplicate KeyIds are rejected
         $rootKey = Ed25519::makeKeyPair();
 
         // Root certificate: ROOT_CA + CA, self-signed
@@ -840,9 +840,9 @@ class ValidatorTest extends TestCase
         $rootSelfSig = Signature::make($rootCertBase->toBinaryForSigning(), $rootKey);
         $rootCert = $rootCertBase->with(signatures: [$rootSelfSig]);
 
-        // Child certificate that uses the SAME key id/public key as root, with an end-entity flag
+        // Child certificate that uses the SAME key id/public key as root (duplicate KeyId)
         $childBase = new Certificate(
-            key: $rootKey->toPublicKey(),
+            key: $rootKey->toPublicKey(),  // Same key = same KeyId
             description: 'child_same_key',
             userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'child')],
             flags: CertificateFlagsCollection::fromList([CertificateFlag::END_ENTITY_FLAG_1]),
@@ -857,6 +857,52 @@ class ValidatorTest extends TestCase
         ]);
 
         $trustStore = new TrustStore([$rootCert]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate chain contains duplicate KeyIds')));
+    }
+
+    public function testEndEntityFlagInheritanceValidatedForAllCertificates()
+    {
+        // Test that end-entity flag inheritance is validated for all certificates, no exceptions
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1], ['root_ca']);
+        $end_entity = $this->makeTestCert('end_entity', [CertificateFlag::END_ENTITY_FLAG_1, CertificateFlag::END_ENTITY_FLAG_2], ['intermediate_ca']);
+
+        $chain = new Chain([
+            $end_entity,
+            $intermediate_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
+    }
+
+    public function testUniqueKeyIdsAllowValidChain()
+    {
+        // Test that chains with unique KeyIds work correctly
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::END_ENTITY_FLAG_1], ['root_ca']);
+        $end_entity = $this->makeTestCert('end_entity', [CertificateFlag::END_ENTITY_FLAG_1], ['intermediate_ca']);
+
+        $chain = new Chain([
+            $end_entity,
+            $intermediate_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
 
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertTrue($result->isValid);
