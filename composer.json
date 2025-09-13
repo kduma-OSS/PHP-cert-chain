@@ -4,14 +4,12 @@
     "description": "PHP implementation for certificate chain of trust with validation and parsing",
     "autoload": {
         "psr-4": {
-            "KDuma\\CertificateChainOfTrust\\": "src/",
-            "KDuma\\BinaryTools\\": "binary-tools/src/"
+            "KDuma\\CertificateChainOfTrust\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "KDuma\\CertificateChainOfTrust\\Tests\\": "tests/",
-            "KDuma\\BinaryTools\\Tests\\": "binary-tools/tests/"
+            "KDuma\\CertificateChainOfTrust\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -22,10 +20,11 @@
     ],
     "require": {
         "php": "^8.4",
-      "ext-mbstring": "*",
-      "ext-hash": "*",
-      "ext-sodium": "*",
-      "paragonie/sodium_compat": "^1.19"
+        "ext-hash": "*",
+        "ext-mbstring": "*",
+        "ext-sodium": "*",
+        "kduma/binary-tools": "^0.0.1",
+        "paragonie/sodium_compat": "^1.19"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.0",
