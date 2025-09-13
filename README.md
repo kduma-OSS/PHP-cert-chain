@@ -1,5 +1,9 @@
 # PHP Certificate Chain of Trust
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/kduma/cert-chain.svg?style=flat-square)](https://packagist.org/packages/kduma/cert-chain)
+[![Tests](https://img.shields.io/github/actions/workflow/status/kduma-OSS/PHP-cert-chain/tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/kduma-OSS/PHP-cert-chain/actions/workflows/tests.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/kduma/cert-chain.svg?style=flat-square)](https://packagist.org/packages/kduma/cert-chain)
+
 A modern, secure PHP library for creating and managing certificate authorities, digital signatures, and trust relationships using **Ed25519 cryptography**. Built for PHP 8.4+ with strict typing, immutable objects, and comprehensive validation.
 
 Check full documentation: [opensource.duma.sh/libraries/php/cert-chain](https://opensource.duma.sh/libraries/php/cert-chain)
