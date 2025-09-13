@@ -219,8 +219,8 @@ class Validator
         $signerHasCA = $signer->flags->hasCA();
         $signerHasIntermediate = $signer->flags->hasIntermediateCA();
 
-        // A signer without any CA-level flags cannot sign anything
-        // SPECIFICATION.md: "Roles and combinations" (No CA flags → cannot sign any certificates)
+        // A signer must have either CA or INTERMEDIATE_CA flag to sign anything
+        // SPECIFICATION.md: "Roles and combinations"
         if (!$signerHasCA && !$signerHasIntermediate) {
             $errors[] = new ValidationError(
                 'Certificate without CA or INTERMEDIATE_CA flags cannot sign other certificates',
