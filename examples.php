@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Certificate;
