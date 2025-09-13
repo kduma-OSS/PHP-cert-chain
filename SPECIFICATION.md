@@ -30,7 +30,7 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
 | 9 | **For i: ValLen** | 2 | UTF-8 value length (UINT16BE). |
 | 10 | **For i: Value** | ValLen | UTF-8. |
 | 11 | **Flags** | 2 | Permission bitmask (see table). **TBS ends here.** |
-| 12 | **SigCount** | 1 | **Must be ≥ 1**. |
+| 12 | **SigCount** | 1 | Number of signatures. May be `0`; such certificates must be rejected during validation. |
 | 13 | **For j in 1..M: SignKeyId** | 16 | Signer’s KeyId (same 16-byte rule). **No length field.** |
 | 14 | **For j: Signature** | 64 | Raw Ed25519 signature. **No length field.** |
 
@@ -47,6 +47,8 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
 - `0x0100` — **Document Signer**
 - `0x0200` — **Template Signer**
 - Other bits **reserved** (must be `0` on encode; ignore on decode).
+- Implementations **must not** modify the `Flags` field when re‑emitting a certificate. Any reserved bits present in input data
+  **must be preserved** exactly to avoid altering signed bytes.
 
 ---
 
@@ -59,12 +61,12 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
   - The ability to sign depends on the presence of `INTERMEDIATE_CA` and/or `CA` flags (see signing rules below), not on `ROOT_CA` alone.
 
 - **Intermediate CA (`0x0002`)**
-  - Authorized to sign only certificates that carry CA‑level flags (`INTERMEDIATE_CA` or `CA`).
-  - Not authorized to sign non‑CA certificates unless it also carries `CA` (see combined case below).
+  - This flag **alone** grants authority to sign CA-level certificates.
+  - When combined with `CA`, allows signing of both CA-level and non-CA certificates.
 
 - **CA (`0x0004`)**
-  - Authorized to sign only non‑CA certificates (no `ROOT_CA`, `INTERMEDIATE_CA`, or `CA` flags on the subject).
-  - Not authorized to sign CA‑level certificates.
+  - Required to sign non-CA certificates.
+  - Without `INTERMEDIATE_CA`, may sign only non‑CA certificates (no `ROOT_CA`, `INTERMEDIATE_CA`, or `CA` flags on the subject).
 
 - **Combined `INTERMEDIATE_CA | CA`**
   - Authorized to sign both CA‑level certificates (because of `INTERMEDIATE_CA`) and non‑CA certificates (because of `CA`).
@@ -78,8 +80,8 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
   - `Subject.EndEntityFlags ⊆ Issuer.EndEntityFlags`.
 
 ### Signing rules matrix
-- To sign a subject with any CA‑level flag (`ROOT_CA`, `INTERMEDIATE_CA`, or `CA`): the issuer must have `INTERMEDIATE_CA`.
-- To sign a subject with no CA‑level flags (a pure end‑entity): the issuer must have `CA`.
+- To sign **non-CA** certificates, the issuer must have `CA`.
+- To sign **CA-level** certificates (with `ROOT_CA`, `INTERMEDIATE_CA`, or `CA` flags), the issuer must have `INTERMEDIATE_CA`.
 
 Quick reference:
 
@@ -92,6 +94,7 @@ Quick reference:
 
 Notes:
 - Presence of `ROOT_CA` does not by itself grant signing capability; it only asserts root identity and must be self‑signed. Combining `ROOT_CA` with the rows above does not change the ✓/✗ outcomes.
+- A root certificate with only `CA` cannot sign CA‑level certificates; it must also include `INTERMEDIATE_CA` to do so.
 - End‑entity flags must obey subset inheritance: `Subject.EndEntity ⊆ Issuer.EndEntity`.
 
 ### End‑Entity Inheritance Matrix
@@ -117,13 +120,14 @@ Notes
 ## Chain validation algorithm
 
 1. Verify structure and lengths.
-2. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
-3. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
-4. For each child/parent pair (issuer = parent):
-   - If child is CA‑level (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must have `INTERMEDIATE_CA`.
-   - If child is non‑CA (no CA‑level flags): issuer must have `CA`.
-   - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
-5. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
+2. Ensure each certificate has at least one signature.
+3. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
+4. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
+5. For each child/parent pair (issuer = parent):
+    - For non-CA children: Issuer must have `CA`.
+    - For CA-level children (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must have `INTERMEDIATE_CA`.
+    - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
+6. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
 
 ---
 
@@ -162,3 +166,38 @@ CertificateChain = 1*Certificate        ; one or more Certificates back-to-back
 ; Each Certificate is defined as previously for AlgVer = 0x01
 ; The entire CertificateChain is Base64-encoded when transported as text.
 ```
+
+---
+
+## TrustStore binary format
+
+A TrustStore is a container for trusted root CA certificates used during chain validation. It has its own binary serialization format for storage and transport.
+
+### Binary layout
+
+| # | Field | Size | Notes |
+|---|---|---:|---|
+| 1 | **Magic** | 6 | Fixed `4e bb ac b5 e7 4a` (TrustStore identifier). |
+| 2 | **Certificates** | Variable | Zero or more complete Certificate structures concatenated back-to-back. |
+
+### Parsing rules
+
+- Decode the magic bytes to identify this as a TrustStore.
+- Parse certificates sequentially using the standard Certificate parsing rules until end of data.
+- Each certificate's length is determined from its internal structure (no explicit count or length fields).
+
+### Validation rules
+
+- **Only root CA certificates**: All certificates in a TrustStore must have the `ROOT_CA` flag and be self-signed.
+- **Unique KeyIds**: All certificates must have unique KeyIds within the TrustStore.
+- **Self-signing validation**: Each certificate's self-signature must be cryptographically valid.
+
+### Encoding rules
+
+- The entire TrustStore binary structure is **Base64-encoded** for text transport.
+- Each Certificate follows the standard certificate binary format defined above.
+- Certificates are stored in the order they were added to the TrustStore.
+
+### Usage
+
+TrustStores are used by the validator to determine which root certificates are trusted during chain validation. A certificate chain is only considered valid if it terminates in a root CA certificate present in the provided TrustStore.

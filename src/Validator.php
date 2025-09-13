@@ -7,6 +7,15 @@ use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use KDuma\CertificateChainOfTrust\DTO\ValidationWarning;
 use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 
+/**
+ * Validator enforces the policy defined in SPECIFICATION.md.
+ * Key sections referenced throughout this file:
+ * - Roles and combinations
+ * - Signing rules matrix
+ * - End‑Entity Inheritance Matrix
+ * - Chain validation algorithm
+ * - Ed25519 details
+ */
 class Validator
 {
     public static function validateChain(Chain $chain, TrustStore $store): ValidationResult
@@ -23,6 +32,7 @@ class Validator
         }
 
         // Ensure every certificate in the chain has at least one signature
+        // SPECIFICATION.md: Certificates must contain at least one signature entry (structural validity)
         foreach ($chain->certificates as $cert) {
             if (count($cert->signatures) === 0) {
                 $errors[] = new ValidationError('Certificate has no signatures', $cert, 'signature presence');
@@ -31,6 +41,7 @@ class Validator
         }
 
         // Build all possible paths from the first certificate to root CAs
+        // SPECIFICATION.md: Chain validation algorithm — build path(s) from leaf to trusted root
         $paths = $chain->buildPaths($certificate);
         
         if (empty($paths)) {
@@ -68,6 +79,7 @@ class Validator
         }
         
         // Add warning if multiple paths exist
+        // SPECIFICATION.md: Chain validation algorithm — multiple possible paths may exist
         if (count($paths) > 1) {
             $warnings[] = new ValidationWarning('Multiple certification paths found', $certificate, 'path analysis');
         }
@@ -93,6 +105,7 @@ class Validator
         }
 
         // Verify that each certificate's embedded KeyId matches its public key
+        // SPECIFICATION.md: Ed25519 details — KeyId = first 16 bytes of SHA-256 over 32-byte public key
         foreach ($path as $certificate) {
             $computedKeyId = KeyId::fromPublicKey($certificate->key->publicKey);
             if (!$computedKeyId->equals($certificate->key->id)) {
@@ -191,8 +204,10 @@ class Validator
         $errors = [];
         
         // If target certificate is a CA certificate (has ROOT_CA, INTERMEDIATE_CA, or CA flags)
+        // See SPECIFICATION.md: "Roles and combinations" and "Signing rules matrix"
         $targetIsCA = $certificate->flags->isCA();
         
+        // SPECIFICATION.md: ROOT_CA must be self‑signed (see "Roles and combinations")
         if ($certificate->flags->hasRootCA() && !$certificate->isSelfSigned()) {
             $errors[] = new ValidationError(
                 'Certificate with ROOT_CA flag must be self-signed',
@@ -204,14 +219,18 @@ class Validator
         $signerHasCA = $signer->flags->hasCA();
         $signerHasIntermediate = $signer->flags->hasIntermediateCA();
 
+        // A signer must have either CA or INTERMEDIATE_CA flag to sign anything
+        // SPECIFICATION.md: "Roles and combinations"
         if (!$signerHasCA && !$signerHasIntermediate) {
             $errors[] = new ValidationError(
-                'Certificate without CA flags cannot sign other certificates',
+                'Certificate without CA or INTERMEDIATE_CA flags cannot sign other certificates',
                 $signer,
                 'certificate authority validation'
             );
         }
 
+        // Enforce specific signing capabilities based on the subject
+        // SPECIFICATION.md: "Signing rules matrix"
         if ($targetIsCA) {
             if (!$signerHasIntermediate) {
                 $errors[] = new ValidationError(
@@ -250,10 +269,13 @@ class Validator
         }
         
         // Get end-entity flags for both certificates
+        // SPECIFICATION.md: "End‑Entity Inheritance Matrix" and
+        // "End‑entity flags (non‑CA) inheritance"
         $certificateEndEntityFlags = $certificate->flags->getEndEntityFlags();
         $signerEndEntityFlags = $signer->flags->getEndEntityFlags();
         
         // Certificate's end-entity flags must be a subset of signer's end-entity flags
+        // SPECIFICATION.md: Subject.EndEntity ⊆ Issuer.EndEntity
         if (!$certificateEndEntityFlags->isSubsetOf($signerEndEntityFlags)) {
             $errors[] = new ValidationError(
                 'Certificate end-entity flags must be a subset of signer\'s end-entity flags. Certificate has: ' .
