@@ -2,7 +2,6 @@
 
 namespace KDuma\CertificateChainOfTrust\DTO;
 
-
 use KDuma\BinaryTools\BinaryReader;
 use KDuma\BinaryTools\BinaryString;
 use KDuma\BinaryTools\BinaryWriter;

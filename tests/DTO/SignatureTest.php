@@ -2,22 +2,20 @@
 
 namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Crypto\Ed25519;
 use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Crypto\PrivateKeyPair;
-use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
-use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\BinaryTools\BinaryReader;
-use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Signature::class)]
 class SignatureTest extends TestCase
 {
-    const string SIGNATURE_HEX = '10d7f832df347ca6d99ddab85b3887db3540facdbc928883aedca0b1141325a8227241c10e888279ec02420f4b8878c6827dfde924543e8a7cdc5df192dc4631c1bd6e9ec9c9a81fc7383b0606578cd7b306';
-    const string FIXED_SIGNATURE_HEX = 'd7f832df347ca6d99ddab85b3887db35facdbc928883aedca0b1141325a8227241c10e888279ec02420f4b8878c6827dfde924543e8a7cdc5df192dc4631c1bd6e9ec9c9a81fc7383b0606578cd7b306';
+    public const string SIGNATURE_HEX = '10d7f832df347ca6d99ddab85b3887db3540facdbc928883aedca0b1141325a8227241c10e888279ec02420f4b8878c6827dfde924543e8a7cdc5df192dc4631c1bd6e9ec9c9a81fc7383b0606578cd7b306';
+    public const string FIXED_SIGNATURE_HEX = 'd7f832df347ca6d99ddab85b3887db35facdbc928883aedca0b1141325a8227241c10e888279ec02420f4b8878c6827dfde924543e8a7cdc5df192dc4631c1bd6e9ec9c9a81fc7383b0606578cd7b306';
     private PrivateKeyPair $key;
     private BinaryString $data;
     private Signature $signature;

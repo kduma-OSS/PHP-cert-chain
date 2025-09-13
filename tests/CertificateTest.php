@@ -2,6 +2,8 @@
 
 namespace KDuma\CertificateChainOfTrust\Tests;
 
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
@@ -9,16 +11,14 @@ use KDuma\CertificateChainOfTrust\DTO\CertificateFlagsCollection;
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\BinaryTools\BinaryReader;
-use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Certificate::class)]
 class CertificateTest extends TestCase
 {
-    const string EXAMPLE_CERT = 'CERTAeNW45NAy3hEziID7lvCsfZ3EMHnQFCvqUxr07jGQXyl8wQ83TpNGnOCEGxOUYg1CCNFeGFtcGxlIEludGVybWVkaWF0ZSBDQSBDZXJ0aWZpY2F0ZQEDABhpbnRlcm1lZGlhdGUuZXhhbXBsZS5jb20DBgFY0TIpXLtX/tk79S+G+oCdPB8ECk4b15eCMYPFAuBxipqF2Nwjj847RvLaw08DPHu7/7Uh7U1QdfntbO5sJLbw2bXx6d5PaaGKpGOnqOrGBQ==';
-    const string EXAMPLE_ROOT_CERT = 'CERTAVjRMilcu1f+2Tv1L4b6gJ3HVeE/YCex4hSFvT1RjNnhtRZovhI8NjSj2rUiiOiTCxtFeGFtcGxlIFJvb3QgQ0EgQ2VydGlmaWNhdGUBAwAQcm9vdC5leGFtcGxlLmNvbQMHAVjRMilcu1f+2Tv1L4b6gJ0eZuMAzrTmI10gs8GZjruuy5tlczYYcRnV9UN4r+fCo05FEqmui2/WJVVBi2Nj+H3DaMrlRC62so24CSta31AH';
+    public const string EXAMPLE_CERT = 'CERTAeNW45NAy3hEziID7lvCsfZ3EMHnQFCvqUxr07jGQXyl8wQ83TpNGnOCEGxOUYg1CCNFeGFtcGxlIEludGVybWVkaWF0ZSBDQSBDZXJ0aWZpY2F0ZQEDABhpbnRlcm1lZGlhdGUuZXhhbXBsZS5jb20DBgFY0TIpXLtX/tk79S+G+oCdPB8ECk4b15eCMYPFAuBxipqF2Nwjj847RvLaw08DPHu7/7Uh7U1QdfntbO5sJLbw2bXx6d5PaaGKpGOnqOrGBQ==';
+    public const string EXAMPLE_ROOT_CERT = 'CERTAVjRMilcu1f+2Tv1L4b6gJ3HVeE/YCex4hSFvT1RjNnhtRZovhI8NjSj2rUiiOiTCxtFeGFtcGxlIFJvb3QgQ0EgQ2VydGlmaWNhdGUBAwAQcm9vdC5leGFtcGxlLmNvbQMHAVjRMilcu1f+2Tv1L4b6gJ0eZuMAzrTmI10gs8GZjruuy5tlczYYcRnV9UN4r+fCo05FEqmui2/WJVVBi2Nj+H3DaMrlRC62so24CSta31AH';
 
     public function testGetSelfSignature()
     {
@@ -42,7 +42,7 @@ class CertificateTest extends TestCase
     {
         $cert = Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERT));
         $binaryForSigning = $cert->toBinaryForSigning();
-        
+
         $this->assertEquals('08445301e356e39340cb7844ce2203ee5bc2b1f67710c1e74050afa94c6bd3b8c6417ca5f3043cdd3a4d1a7382106c4e51883508234578616d706c6520496e7465726d65646961746520434120436572746966696361746501030018696e7465726d6564696174652e6578616d706c652e636f6d0306', $binaryForSigning->toHex());
     }
 
@@ -50,7 +50,7 @@ class CertificateTest extends TestCase
     {
         $reader = new BinaryReader(BinaryString::fromBase64(self::EXAMPLE_CERT));
         $cert = Certificate::fromBinaryReader($reader);
-        
+
         $this->assertEquals('Example Intermediate CA Certificate', $cert->description);
         $this->assertEquals('intermediate.example.com', $cert->userDescriptors[0]->value);
         $this->assertFalse($cert->isSelfSigned());
@@ -83,12 +83,12 @@ class CertificateTest extends TestCase
     public function testGetSignatureByKeyId()
     {
         $cert = Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_ROOT_CERT));
-        
+
         // Get signature by the certificate's own key ID (self-signature)
         $selfSignature = $cert->getSignatureByKeyId($cert->key->id);
         $this->assertNotNull($selfSignature);
         $this->assertEquals($cert->getSelfSignature(), $selfSignature);
-        
+
         // Try with a non-existent key ID
         $fakeKeyId = KeyId::fromString(str_repeat("\x00", 16));
         $noSignature = $cert->getSignatureByKeyId($fakeKeyId);
@@ -103,11 +103,11 @@ class CertificateTest extends TestCase
         $userDescriptors = [new UserDescriptor(DescriptorType::DOMAIN, 'example.com')];
         $flags = CertificateFlagsCollection::fromInt(0x0007);
         $signatures = [];
-        
+
         $cert = new Certificate($publicKey, 'Test Certificate', $userDescriptors, $flags, $signatures);
         $this->assertEquals('Test Certificate', $cert->description);
         $this->assertEquals('example.com', $cert->userDescriptors[0]->value);
-        
+
         // Test invalid key ID (empty)
         try {
             $emptyKeyId = KeyId::fromString('');
@@ -117,7 +117,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('KeyId cannot be empty', $e->getMessage());
         }
-        
+
         // Test invalid key ID (wrong size)
         try {
             $wrongSizeKeyId = KeyId::fromString(str_repeat("\x01", 10));
@@ -127,7 +127,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('KeyId must be 16 bytes', $e->getMessage());
         }
-        
+
         // Test invalid public key (empty)
         try {
             $validKeyId = KeyId::fromString(str_repeat("\x01", 16));
@@ -137,7 +137,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Public key cannot be empty', $e->getMessage());
         }
-        
+
         // Test invalid public key (wrong size)
         try {
             $validKeyId = KeyId::fromString(str_repeat("\x01", 16));
@@ -147,7 +147,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Public key must be 32 bytes', $e->getMessage());
         }
-        
+
         // Test invalid description (empty)
         try {
             new Certificate($publicKey, '', $userDescriptors, $flags, $signatures);
@@ -155,7 +155,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Description cannot be empty', $e->getMessage());
         }
-        
+
         // Test invalid description (non-UTF-8)
         try {
             new Certificate($publicKey, "\xFF\xFE", $userDescriptors, $flags, $signatures);
@@ -163,7 +163,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('Description must be valid UTF-8', $e->getMessage());
         }
-        
+
         // Test invalid user descriptors
         try {
             $invalidUserDescriptors = [new \stdClass()];
@@ -172,7 +172,7 @@ class CertificateTest extends TestCase
         } catch (\InvalidArgumentException $e) {
             $this->assertEquals('All elements of $userDescriptors must be instances of UserDescriptor', $e->getMessage());
         }
-        
+
         // Test invalid signatures
         try {
             $invalidSignatures = [new \stdClass()];
@@ -187,9 +187,9 @@ class CertificateTest extends TestCase
     {
         $cert = Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERT));
         $binary = $cert->toBinary();
-        
+
         $this->assertNotEmpty($binary->value);
-        
+
         // Should be able to reconstruct the same certificate
         $reconstructed = Certificate::fromBinary($binary);
         $this->assertEquals($cert->description, $reconstructed->description);
@@ -213,7 +213,7 @@ class CertificateTest extends TestCase
         $this->assertEquals('Example Intermediate CA Certificate', $cert->description);
         $this->assertFalse($cert->isSelfSigned());
         $this->assertFalse($cert->isRootCA());
-        
+
         // Test with root certificate
         $rootCert = Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_ROOT_CERT));
         $this->assertEquals('Example Root CA Certificate', $rootCert->description);

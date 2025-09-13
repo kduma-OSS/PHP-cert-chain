@@ -2,7 +2,6 @@
 
 namespace KDuma\CertificateChainOfTrust\Crypto;
 
-
 use KDuma\BinaryTools\BinaryString;
 
 readonly class KeyId extends BinaryString

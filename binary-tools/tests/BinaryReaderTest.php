@@ -4,7 +4,6 @@ namespace KDuma\BinaryTools\Tests;
 
 use KDuma\BinaryTools\BinaryReader;
 use KDuma\BinaryTools\BinaryString;
-use KDuma\BinaryTools\BinaryWriter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

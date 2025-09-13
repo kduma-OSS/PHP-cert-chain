@@ -2,18 +2,18 @@
 
 namespace KDuma\CertificateChainOfTrust\Tests\Crypto;
 
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
-use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(PublicKey::class)]
 class PublicKeyTest extends TestCase
 {
-    const string KEY_ID_HEX = 'a503e0452f4d3a8539c791b0e958069d';
-    const string PUBLIC_KEY_HEX = '6ba8dfa86878b025e49d9858b66b20e5a89e96d9c656a989eec09f5d776ad593';
-    const string BINARY_B64 = "PubKEKUD4EUvTTqFOceRsOlYBp0AIGuo36hoeLAl5J2YWLZrIOWonpbZxlapie7An113atWT";
+    public const string KEY_ID_HEX = 'a503e0452f4d3a8539c791b0e958069d';
+    public const string PUBLIC_KEY_HEX = '6ba8dfa86878b025e49d9858b66b20e5a89e96d9c656a989eec09f5d776ad593';
+    public const string BINARY_B64 = "PubKEKUD4EUvTTqFOceRsOlYBp0AIGuo36hoeLAl5J2YWLZrIOWonpbZxlapie7An113atWT";
 
     private PublicKey $key;
 

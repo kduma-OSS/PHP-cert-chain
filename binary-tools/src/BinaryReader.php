@@ -2,8 +2,6 @@
 
 namespace KDuma\BinaryTools;
 
-
-
 use RuntimeException;
 
 class BinaryReader
@@ -101,13 +99,13 @@ class BinaryReader
     public function readString(int $length): BinaryString
     {
         $bytes = $this->readBytes($length);
-        
+
         if (!mb_check_encoding($bytes->value, 'UTF-8')) {
             $this->position -= $length;
             throw new RuntimeException('Invalid UTF-8 string');
         }
 
-        
+
         return $bytes;
     }
 

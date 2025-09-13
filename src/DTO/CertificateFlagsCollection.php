@@ -2,7 +2,7 @@
 
 namespace KDuma\CertificateChainOfTrust\DTO;
 
-class  CertificateFlagsCollection
+class CertificateFlagsCollection
 {
     public array $flags {
         get {
@@ -116,7 +116,7 @@ class  CertificateFlagsCollection
         $parts = array_map(function (CertificateFlag $flag) {
             return $flag->toString();
         }, $this->flags);
-        
+
         return implode(' | ', $parts) ?: '';
     }
 }

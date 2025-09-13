@@ -14,7 +14,7 @@ class BinaryWriterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->writer = new BinaryWriter;
+        $this->writer = new BinaryWriter();
 
         $this->writer->writeByte(0x01);
         $this->writer->writeByte(0x02);

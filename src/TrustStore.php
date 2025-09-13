@@ -2,9 +2,6 @@
 
 namespace KDuma\CertificateChainOfTrust;
 
-use KDuma\BinaryTools\BinaryReader;
-use KDuma\BinaryTools\BinaryString;
-use KDuma\BinaryTools\BinaryWriter;
 use Override;
 
 readonly class TrustStore extends CertificatesContainer
@@ -16,7 +13,7 @@ readonly class TrustStore extends CertificatesContainer
             throw new \InvalidArgumentException('Only self-signed root CA certificates can be added to trust store');
         }
 
-        if(count(array_filter($this->certificates, fn($c) => $c->key->id->equals($certificate->key->id))) !== 1) {
+        if (count(array_filter($this->certificates, fn ($c) => $c->key->id->equals($certificate->key->id))) !== 1) {
             throw new \InvalidArgumentException('Certificates in trust store must have unique KeyIds');
         }
     }

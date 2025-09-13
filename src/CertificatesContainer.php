@@ -2,19 +2,18 @@
 
 namespace KDuma\CertificateChainOfTrust;
 
-use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\BinaryTools\BinaryReader;
 use KDuma\BinaryTools\BinaryString;
 use KDuma\BinaryTools\BinaryWriter;
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 
 abstract readonly class CertificatesContainer
 {
     public function __construct(
         /** @var Certificate[] */
         public array $certificates = [],
-    )
-    {
-        if (array_any($this->certificates, fn($certificate) => !$certificate instanceof Certificate)) {
+    ) {
+        if (array_any($this->certificates, fn ($certificate) => !$certificate instanceof Certificate)) {
             throw new \InvalidArgumentException('All elements of $certificates must be instances of Certificate');
         }
 
@@ -32,7 +31,7 @@ abstract readonly class CertificatesContainer
         $reader = new BinaryReader($data);
 
         $requiredMagic = BinaryString::fromString(static::getMagicBytes());
-        if($requiredMagic->size() > 0) {
+        if ($requiredMagic->size() > 0) {
             $actualMagic = $reader->readBytes($requiredMagic->size());
             if (!$actualMagic->equals($requiredMagic)) {
                 throw new \InvalidArgumentException('Invalid magic bytes for ' . static::class);
@@ -67,6 +66,6 @@ abstract readonly class CertificatesContainer
 
     public function getById(KeyId $id): ?Certificate
     {
-        return array_find($this->certificates, fn($certificate) => $certificate->key->id->equals($id));
+        return array_find($this->certificates, fn ($certificate) => $certificate->key->id->equals($id));
     }
 }

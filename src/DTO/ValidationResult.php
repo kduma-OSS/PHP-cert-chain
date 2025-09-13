@@ -17,15 +17,16 @@ readonly class ValidationResult
         public array $warnings = [],
         public array $validatedChain = [],
         public bool  $isValid = true
-    ){}
+    ) {
+    }
 
     public function getErrorMessages(): array
     {
-        return array_map(fn($error) => $error->getMessage(), $this->errors);
+        return array_map(fn ($error) => $error->getMessage(), $this->errors);
     }
 
     public function getWarningMessages(): array
     {
-        return array_map(fn($warning) => $warning->getMessage(), $this->warnings);
+        return array_map(fn ($warning) => $warning->getMessage(), $this->warnings);
     }
 }

@@ -2,16 +2,16 @@
 
 namespace KDuma\CertificateChainOfTrust\DTO;
 
-
 use KDuma\CertificateChainOfTrust\Certificate;
 
-readonly abstract class ValidationElement
+abstract readonly class ValidationElement
 {
     public function __construct(
         public string $message,
         public ?Certificate $certificate = null,
         public ?string $context = null
-    ) {}
+    ) {
+    }
 
     public function getMessage(): string
     {

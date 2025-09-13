@@ -8,13 +8,12 @@ use KDuma\BinaryTools\BinaryWriter;
 
 readonly class PublicKey
 {
-    const string MAGIC = "\x3e\xe6\xca";
+    public const string MAGIC = "\x3e\xe6\xca";
 
     public function __construct(
         public KeyId $id,
         public BinaryString $publicKey,
-    )
-    {
+    ) {
     }
 
     public function isKeyIdValid(): bool
@@ -65,7 +64,7 @@ readonly class PublicKey
             throw new \InvalidArgumentException('Failed to parse PublicKey: ' . $e->getMessage());
         }
 
-        if($reader->has_more_data) {
+        if ($reader->has_more_data) {
             throw new \InvalidArgumentException('Extra data found after parsing PublicKey');
         }
 

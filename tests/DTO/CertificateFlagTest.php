@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CertificateFlag::class)]
 class CertificateFlagTest extends TestCase
 {
-
     public function testToString()
     {
         $this->assertEquals('Root CA', CertificateFlag::ROOT_CA->toString());

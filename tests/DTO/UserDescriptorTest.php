@@ -2,15 +2,14 @@
 
 namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
-use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
-use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
 use KDuma\BinaryTools\BinaryReader;
 use KDuma\BinaryTools\BinaryString;
+use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
+use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
 use PHPUnit\Framework\TestCase;
 
 class UserDescriptorTest extends TestCase
 {
-
     public function test__construct()
     {
         $descriptor = new UserDescriptor(DescriptorType::USERNAME, 'johndoe');

@@ -2,18 +2,18 @@
 
 namespace KDuma\CertificateChainOfTrust;
 
+use KDuma\BinaryTools\BinaryReader;
+use KDuma\BinaryTools\BinaryString;
+use KDuma\BinaryTools\BinaryWriter;
 use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
 use KDuma\CertificateChainOfTrust\DTO\CertificateFlagsCollection;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\BinaryTools\BinaryReader;
-use KDuma\BinaryTools\BinaryString;
-use KDuma\BinaryTools\BinaryWriter;
 
 readonly class Certificate
 {
-    const string MAGIC = "\x08\x44\x53";
+    public const string MAGIC = "\x08\x44\x53";
 
     public function __construct(
         public PublicKey                  $key,
@@ -23,8 +23,7 @@ readonly class Certificate
         public CertificateFlagsCollection $flags,
         /** @var Signature[] */
         public array                      $signatures
-    )
-    {
+    ) {
         if (empty($this->key->id->value)) {
             throw new \InvalidArgumentException('KeyId cannot be empty');
         }
@@ -49,11 +48,11 @@ readonly class Certificate
             throw new \InvalidArgumentException('Description must be valid UTF-8');
         }
 
-        if (array_any($this->userDescriptors, fn($element) => !$element instanceof UserDescriptor)) {
+        if (array_any($this->userDescriptors, fn ($element) => !$element instanceof UserDescriptor)) {
             throw new \InvalidArgumentException('All elements of $userDescriptors must be instances of UserDescriptor');
         }
 
-        if (array_any($this->signatures, fn($element) => !$element instanceof Signature)) {
+        if (array_any($this->signatures, fn ($element) => !$element instanceof Signature)) {
             throw new \InvalidArgumentException('All elements of $signatures must be instances of Signature');
         }
     }
@@ -65,7 +64,7 @@ readonly class Certificate
 
     public function getSignatureByKeyId(KeyId $keyId): ?Signature
     {
-        return array_find($this->signatures, fn(Signature $signature) => $signature->keyId->equals($keyId));
+        return array_find($this->signatures, fn (Signature $signature) => $signature->keyId->equals($keyId));
     }
 
     public function getSelfSignature(): ?Signature
@@ -146,7 +145,7 @@ readonly class Certificate
             throw new \InvalidArgumentException('Failed to parse Certificate: ' . $e->getMessage());
         }
 
-        if($reader->has_more_data && !$reader->peekBytes(3)->equals(BinaryString::fromString(self::MAGIC))) {
+        if ($reader->has_more_data && !$reader->peekBytes(3)->equals(BinaryString::fromString(self::MAGIC))) {
             throw new \InvalidArgumentException('Extra data found after parsing Certificate');
         }
 
@@ -166,8 +165,7 @@ readonly class Certificate
         ?array $userDescriptors = null,
         ?CertificateFlagsCollection $flags = null,
         ?array $signatures = null
-    ): Certificate
-    {
+    ): Certificate {
         return new self(
             $key ?? $this->key,
             $description ?? $this->description,

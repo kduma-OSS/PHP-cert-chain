@@ -2,8 +2,8 @@
 
 namespace KDuma\CertificateChainOfTrust\Tests\Crypto;
 
-use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\BinaryTools\BinaryString;
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
