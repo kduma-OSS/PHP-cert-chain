@@ -5,6 +5,7 @@ namespace KDuma\CertificateChainOfTrust;
 use KDuma\CertificateChainOfTrust\DTO\ValidationError;
 use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use KDuma\CertificateChainOfTrust\DTO\ValidationWarning;
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 
 class Validator
 {
@@ -79,14 +80,23 @@ class Validator
     {
         $errors = [];
         $warnings = [];
-        
+
         if (empty($path)) {
             // @codeCoverageIgnoreStart
             $errors[] = new ValidationError('Empty certification path provided');
             return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             // @codeCoverageIgnoreEnd
         }
-        
+
+        // Verify that each certificate's embedded KeyId matches its public key
+        foreach ($path as $certificate) {
+            $computedKeyId = KeyId::fromPublicKey($certificate->key->publicKey);
+            if (!$computedKeyId->equals($certificate->key->id)) {
+                $errors[] = new ValidationError('KeyId does not match public key', $certificate, 'key id validation');
+                return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
+            }
+        }
+
         // Verify the last certificate in path is a root CA
         $rootCert = end($path);
         if (!$rootCert->isRootCA()) {

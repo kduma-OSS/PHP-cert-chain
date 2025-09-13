@@ -5,6 +5,8 @@ namespace KDuma\CertificateChainOfTrust\Tests;
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\Chain;
 use KDuma\CertificateChainOfTrust\Crypto\Ed25519;
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
+use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
 use KDuma\CertificateChainOfTrust\DTO\CertificateFlag;
 use KDuma\CertificateChainOfTrust\DTO\CertificateFlagsCollection;
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
@@ -181,6 +183,60 @@ class ValidatorTest extends TestCase
         $this->assertStringContainsString('Root CA is not in the trust store', $errorMessages[1]);
         $this->assertStringContainsString('Certificate: ' . $root_ca->key->id->toHex(), $errorMessages[1]);
         $this->assertStringContainsString('[trust store validation]', $errorMessages[1]);
+    }
+
+    public function testValidateChainAcceptsCertificatesWithValidKeyIds()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
+        $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
+
+        $chain = new Chain([
+            $signer,
+            $ca,
+            $intermediate_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertTrue($result->isValid);
+    }
+
+    public function testValidateChainRejectsCertificatesWithMismatchedKeyId()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
+        $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
+
+        $bad_signer = $signer->with(
+            key: new PublicKey(
+                KeyId::fromHex('00000000000000000000000000000000'),
+                $signer->key->publicKey,
+            )
+        );
+
+        $chain = new Chain([
+            $bad_signer,
+            $ca,
+            $intermediate_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+
+        $this->assertFalse($result->isValid);
+        $errorMessages = $result->getErrorMessages();
+        $this->assertStringContainsString('KeyId does not match public key', $errorMessages[1]);
     }
 
     public function testValidationResultStructure()
