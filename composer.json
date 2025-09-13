@@ -2,6 +2,7 @@
     "name": "kduma/cert-chain",
     "type": "library",
     "description": "PHP implementation for certificate chain of trust with validation and parsing",
+    "homepage": "https://opensource.duma.sh/libraries/php/cert-chain",
     "autoload": {
         "psr-4": {
             "KDuma\\CertificateChainOfTrust\\": "src/"
