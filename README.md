@@ -229,5 +229,5 @@ Contributions are welcome! Please see the examples and documentation to understa
 ---
 
 **🔗 Related Projects:**
-- [kduma/binary-tools](https://github.com/kduma/binary-tools) - Binary data manipulation utilities
+- [kduma/binary-tools](https://opensource.duma.sh/libraries/php/binary-tools) - Binary data manipulation utilities
 
