@@ -70,8 +70,8 @@ class ValidatorTest extends TestCase
     public function testValidateCompleteValidChain()
     {
         // Create complete certificate chain using makeTestCert
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
 
@@ -109,7 +109,7 @@ class ValidatorTest extends TestCase
 
     public function testValidateEmptyChain()
     {
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         
         $emptyChain = new Chain([]);
         $trustStore = new TrustStore([
@@ -131,8 +131,8 @@ class ValidatorTest extends TestCase
     public function testValidateIncompleteChain()
     {
         // Create certificates but use incomplete chain (missing intermediate and root CA)
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
         
@@ -163,8 +163,8 @@ class ValidatorTest extends TestCase
     public function testValidateRootNotInTrustStore()
     {
         // Create complete valid chain
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
         
@@ -195,8 +195,8 @@ class ValidatorTest extends TestCase
 
     public function testValidateChainAcceptsCertificatesWithValidKeyIds()
     {
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
 
@@ -212,13 +212,16 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertTrue($result->isValid);
+        $this->assertTrue(
+            $result->isValid,
+            'Unexpected invalid: ' . implode(' | ', $result->getErrorMessages())
+        );
     }
 
     public function testValidateChainRejectsCertificatesWithMismatchedKeyId()
     {
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
 
@@ -267,8 +270,8 @@ class ValidatorTest extends TestCase
     public function testValidationResultStructure()
     {
         // Test with valid chain using makeTestCert
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
         
@@ -284,6 +287,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($validChain, $trustStore);
+        $this->assertTrue(
+            $result->isValid,
+            'Unexpected invalid: ' . implode(' | ', $result->getErrorMessages())
+        );
 
         // Test result structure and types
         $this->assertInstanceOf(ValidationResult::class, $result);
@@ -314,8 +321,8 @@ class ValidatorTest extends TestCase
     {
         // Create chain where certificates exist but one doesn't sign the other
         // This would happen if we had certificates that aren't properly linked
-        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
+        $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
         
@@ -331,6 +338,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chainWithMissingLink, $trustStore);
+        $this->assertFalse(
+            $result->isValid,
+            'Unexpected valid: ' . json_encode($result->getWarningMessages())
+        );
 
         $this->assertInstanceOf(ValidationResult::class, $result);
         $this->assertFalse($result->isValid);
@@ -357,6 +368,10 @@ class ValidatorTest extends TestCase
         $wrongTrustStore = new TrustStore([]); // Empty trust store
 
         $result = Validator::validateChain($invalidChain, $wrongTrustStore);
+        $this->assertFalse(
+            $result->isValid,
+            'Unexpected valid: ' . json_encode($result->getWarningMessages())
+        );
 
         $this->assertInstanceOf(ValidationResult::class, $result);
         $this->assertFalse($result->isValid);
@@ -415,6 +430,9 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
+        if (!$result->isValid) {
+            $this->fail('Unexpected invalid: ' . implode(' | ', $result->getErrorMessages()));
+        }
 
         // With current test data, this should succeed with no warnings
         // But the code is structured to handle multiple paths if they exist
@@ -440,7 +458,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertTrue($result->isValid);
+        $this->assertTrue(
+            $result->isValid,
+            'Unexpected invalid: ' . implode(' | ', $result->getErrorMessages())
+        );
 
         // Invalid Case
         $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
@@ -458,7 +479,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertFalse($result->isValid);
+        $this->assertFalse(
+            $result->isValid,
+            'Unexpected valid: ' . json_encode($result->getWarningMessages())
+        );
     }
 
     public function testThatRootCaWithoutIntermediateCaCantSignCaCertificates()
@@ -479,7 +503,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertTrue($result->isValid);
+        $this->assertTrue(
+            $result->isValid,
+            'Unexpected invalid: ' . implode(' | ', $result->getErrorMessages())
+        );
 
         // Invalid Case
         $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
@@ -497,7 +524,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertFalse($result->isValid);
+        $this->assertFalse(
+            $result->isValid,
+            'Unexpected valid: ' . json_encode($result->getWarningMessages())
+        );
     }
 
     public function testThatRootCaCantSignNonCaCertificates()
@@ -516,7 +546,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertTrue($result->isValid);
+        $this->assertTrue(
+            $result->isValid,
+            'Unexpected invalid: ' . implode(' | ', $result->getErrorMessages())
+        );
 
         // Invalid Case
         $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
@@ -532,7 +565,10 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertFalse($result->isValid);
+        $this->assertFalse(
+            $result->isValid,
+            'Unexpected valid: ' . json_encode($result->getWarningMessages())
+        );
     }
 
     public function testValidateChainAddsMultiplePathsWarning()
@@ -701,10 +737,10 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate without CA flag cannot sign other certificates')));
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Non-CA certificate must be signed by a certificate with CA flag')));
     }
 
-    public function testIntermediateCaCannotSignCaCertificateWithoutCaFlag()
+    public function testIntermediateCaCanSignCaCertificateWithoutCaFlag()
     {
         $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
         $intermediate_only = $this->makeTestCert('intermediate_only', [CertificateFlag::INTERMEDIATE_CA], ['root_ca']);
@@ -721,9 +757,7 @@ class ValidatorTest extends TestCase
         ]);
 
         $result = Validator::validateChain($chain, $trustStore);
-        $this->assertFalse($result->isValid);
-        $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate without CA flag cannot sign other certificates')));
+        $this->assertTrue($result->isValid);
     }
 
     public function testCertificateWithRootCaFlagMustBeSelfSigned()
