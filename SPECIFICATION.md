@@ -61,12 +61,12 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
   - The ability to sign depends on the presence of `INTERMEDIATE_CA` and/or `CA` flags (see signing rules below), not on `ROOT_CA` alone.
 
 - **Intermediate CA (`0x0002`)**
-  - Authorized to sign only certificates that carry CA‑level flags (`INTERMEDIATE_CA` or `CA`).
-  - Not authorized to sign non‑CA certificates unless it also carries `CA` (see combined case below).
+  - This flag **alone** does not grant signing authority.
+  - When combined with `CA`, allows signing of certificates that carry CA‑level flags.
 
 - **CA (`0x0004`)**
-  - Authorized to sign only non‑CA certificates (no `ROOT_CA`, `INTERMEDIATE_CA`, or `CA` flags on the subject).
-  - Not authorized to sign CA‑level certificates.
+  - Required on any certificate that issues another certificate.
+  - Without `INTERMEDIATE_CA`, may sign only non‑CA certificates (no `ROOT_CA`, `INTERMEDIATE_CA`, or `CA` flags on the subject).
 
 - **Combined `INTERMEDIATE_CA | CA`**
   - Authorized to sign both CA‑level certificates (because of `INTERMEDIATE_CA`) and non‑CA certificates (because of `CA`).
@@ -80,8 +80,8 @@ The following structure applies to `AlgVer = 0x01` (Ed25519 v1 — fixed sizes, 
   - `Subject.EndEntityFlags ⊆ Issuer.EndEntityFlags`.
 
 ### Signing rules matrix
-- To sign a subject with any CA‑level flag (`ROOT_CA`, `INTERMEDIATE_CA`, or `CA`): the issuer must have `INTERMEDIATE_CA`.
-- To sign a subject with no CA‑level flags (a pure end‑entity): the issuer must have `CA`.
+- To sign **any** certificate, the issuer must have `CA`.
+- If the subject has any CA‑level flag (`ROOT_CA`, `INTERMEDIATE_CA`, or `CA`), the issuer must also have `INTERMEDIATE_CA`.
 
 Quick reference:
 
@@ -89,11 +89,12 @@ Quick reference:
 |----------------------------:|:-------------------:|:---------------------:|
 | None                        | ✗                   | ✗                     |
 | CA                          | ✓                   | ✗                     |
-| INTERMEDIATE_CA             | ✗                   | ✓                     |
+| INTERMEDIATE_CA             | ✗                   | ✗                     |
 | INTERMEDIATE_CA | CA        | ✓                   | ✓                     |
 
 Notes:
 - Presence of `ROOT_CA` does not by itself grant signing capability; it only asserts root identity and must be self‑signed. Combining `ROOT_CA` with the rows above does not change the ✓/✗ outcomes.
+- A root certificate with only `CA` cannot sign CA‑level certificates; it must also include `INTERMEDIATE_CA` to do so.
 - End‑entity flags must obey subset inheritance: `Subject.EndEntity ⊆ Issuer.EndEntity`.
 
 ### End‑Entity Inheritance Matrix
@@ -122,8 +123,8 @@ Notes
 2. Compute `KeyId` as `SHA-256(PubKey)[0..15]` and verify it matches the embedded value.
 3. Build a path from leaf to a trusted root by matching `SignKeyId` to parent `KeyId`.
 4. For each child/parent pair (issuer = parent):
-   - If child is CA‑level (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must have `INTERMEDIATE_CA`.
-   - If child is non‑CA (no CA‑level flags): issuer must have `CA`.
+   - Issuer must have `CA`.
+   - If the child is CA‑level (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must also have `INTERMEDIATE_CA`.
    - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
 5. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
 
