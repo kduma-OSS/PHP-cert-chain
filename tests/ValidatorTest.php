@@ -411,4 +411,109 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
     }
+
+    public function testCaCertificateMustBeSignedByRootOrIntermediate()
+    {
+        // Build: target CA signed by a signer that has only CA (not ROOT_CA/INTERMEDIATE_CA) -> invalid
+        $root_ca = $this->makeTestCert('root_for_ca_target', [CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_for_ca_target']);
+        $ca_signer_only_ca = $this->makeTestCert('ca_signer_only_ca', [CertificateFlag::CA], ['root_for_ca_target']);
+        $ca_target = $this->makeTestCert('ca_target', [CertificateFlag::CA], ['ca_signer_only_ca']);
+
+        $chain = new Chain([
+            $ca_target,
+            $ca_signer_only_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with CA flags can only be signed by INTERMEDIATE_CA or ROOT_CA')));
+    }
+
+    public function testEndEntityFlagsMustBeSubsetOfSigner()
+    {
+        // Build: subject with DOCUMENT_SIGNER signed by signer with only CA (no end-entity flags) -> invalid
+        $root_ca = $this->makeTestCert('root_for_subset', [CertificateFlag::ROOT_CA, CertificateFlag::CA], ['root_for_subset']);
+        $signer_only_ca = $this->makeTestCert('signer_only_ca', [CertificateFlag::CA], ['root_for_subset']);
+        $subject_with_doc = $this->makeTestCert('subject_with_doc', [CertificateFlag::DOCUMENT_SIGNER], ['signer_only_ca']);
+
+        $chain = new Chain([
+            $subject_with_doc,
+            $signer_only_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
+
+
+        // Build: subject with DOCUMENT_SIGNER signed by signer with only CA (no end-entity flags) -> invalid
+        $root_ca = $this->makeTestCert('root_for_subset', [CertificateFlag::ROOT_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_for_subset']);
+        $signer_only_ca = $this->makeTestCert('signer_only_ca', [CertificateFlag::CA], ['root_for_subset']);
+        $subject_with_doc = $this->makeTestCert('subject_with_doc', [CertificateFlag::DOCUMENT_SIGNER], ['signer_only_ca']);
+
+        $chain = new Chain([
+            $subject_with_doc,
+            $signer_only_ca,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
+    }
+
+    public function testRootSelfSignedAllowsAnyEndEntityFlagsForSameKey()
+    {
+        // Hit the early return in validateEndEntityFlagInheritance when signer is self-signed ROOT_CA
+        $rootKey = Ed25519::makeKeyPair();
+
+        // Root certificate: ROOT_CA + CA, self-signed
+        $rootCertBase = new Certificate(
+            key: $rootKey->toPublicKey(),
+            description: 'root_self',
+            userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'root')],
+            flags: CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::CA]),
+            signatures: []
+        );
+        $rootSelfSig = Signature::make($rootCertBase->toBinaryForSigning(), $rootKey);
+        $rootCert = $rootCertBase->with(signatures: [$rootSelfSig]);
+
+        // Child certificate that uses the SAME key id/public key as root, with an end-entity flag
+        $childBase = new Certificate(
+            key: $rootKey->toPublicKey(),
+            description: 'child_same_key',
+            userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'child')],
+            flags: CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]),
+            signatures: []
+        );
+        $childSigByRoot = Signature::make($childBase->toBinaryForSigning(), $rootKey);
+        $childCert = $childBase->with(signatures: [$childSigByRoot]);
+
+        $chain = new Chain([
+            $childCert,
+            $rootCert,
+        ]);
+
+        $trustStore = new TrustStore([$rootCert]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertTrue($result->isValid);
+    }
 }
