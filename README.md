@@ -20,7 +20,7 @@ use KDuma\CertificateChainOfTrust\DTO\{CertificateFlag, CertificateFlagsCollecti
 // Generate key pair for the root
 $rootKey = Ed25519::makeKeyPair();
 
-// Build the certificate and self‑sign it
+// Build the certificate and self-sign it
 $rootCert = new Certificate(
     key: $rootKey,
     description: 'Example Root CA',
