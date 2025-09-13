@@ -59,6 +59,14 @@ class ValidatorTest extends TestCase
         return $this->certificates[$name]['certificate'];
     }
 
+    private function invokeValidatePath(array $path, TrustStore $store): array
+    {
+        $ref = new \ReflectionClass(Validator::class);
+        $m = $ref->getMethod('validatePath');
+        $m->setAccessible(true);
+        return $m->invoke(null, $path, $store);
+    }
+
     public function testValidateCompleteValidChain()
     {
         // Create complete certificate chain using makeTestCert
@@ -510,6 +518,130 @@ class ValidatorTest extends TestCase
         $this->assertFalse($result->isValid);
     }
 
+    public function testValidateChainAddsMultiplePathsWarning()
+    {
+        // Root that can sign both CA-level and non-CA (INTERMEDIATE_CA | CA)
+        $root = $this->makeTestCert('root', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root']);
+        // Two parallel intermediates
+        $i1 = $this->makeTestCert('i1', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root']);
+        $i2 = $this->makeTestCert('i2', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root']);
+        // Leaf signed by both intermediates
+        $leaf = $this->makeTestCert('leaf', [CertificateFlag::DOCUMENT_SIGNER], ['i1', 'i2']);
+
+        $chain = new Chain([$leaf, $i1, $i2, $root]);
+        $store = new TrustStore([$root]);
+
+        $result = Validator::validateChain($chain, $store);
+        $this->assertTrue($result->isValid);
+        $this->assertGreaterThanOrEqual(1, count($result->warnings));
+        $this->assertTrue(array_any($result->getWarningMessages(), fn($m) => str_contains($m, 'Multiple certification paths found')));
+    }
+
+    public function testValidatePathEmptyArray()
+    {
+        $store = new TrustStore([]);
+        $res = $this->invokeValidatePath([], $store);
+        $this->assertFalse($res['isValid']);
+        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => $m === 'Empty certification path provided'));
+    }
+
+    public function testValidatePathNotEndingWithRoot()
+    {
+        // Create a CA signer that is not a root
+        $ca = $this->makeTestCert('ca_only', [CertificateFlag::CA], ['ca_only']);
+        // Leaf signed by this CA
+        $leaf = $this->makeTestCert('leaf2', [CertificateFlag::DOCUMENT_SIGNER], ['ca_only']);
+
+        $store = new TrustStore([]);
+        $res = $this->invokeValidatePath([$leaf, $ca], $store);
+        $this->assertFalse($res['isValid']);
+        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => str_contains($m, 'Path does not end with a root CA certificate')));
+    }
+
+    public function testValidatePathMissingSignatureBetweenAdjacentCerts()
+    {
+        // Use root as signer but omit root's signature on the leaf
+        $root = $this->makeTestCert('root_abs', [CertificateFlag::ROOT_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_abs']);
+        $leaf = $this->makeTestCert('leaf3', [CertificateFlag::DOCUMENT_SIGNER], []);
+
+        // Path pairs leaf -> root (no signature by root)
+        $store = new TrustStore([$root]);
+        $res = $this->invokeValidatePath([$leaf, $root], $store);
+        $this->assertFalse($res['isValid']);
+        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => str_contains($m, 'Certificate is not signed by the next certificate in path')));
+    }
+
+    public function testValidatePathInvalidSignatureBetweenAdjacentCerts()
+    {
+        // Build signer and leaf with forged signature bytes
+        $signer = $this->makeTestCert('bad_signer', [CertificateFlag::ROOT_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['bad_signer']);
+
+        // Create a leaf with an invalid signature referencing signer's KeyId
+        $kp = $this->certificates['bad_signer']['key'];
+        $leaf_base = new Certificate(
+            key: Ed25519::makeKeyPair()->toPublicKey(),
+            description: 'leaf_bad_sig',
+            userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'leaf_bad')],
+            flags: CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]),
+            signatures: []
+        );
+        $forged = new Signature($kp->id, BinaryString::fromHex(str_repeat('00', 64)));
+        $leaf = $leaf_base->with(signatures: [$forged]);
+
+        $store = new TrustStore([$signer]);
+        $res = $this->invokeValidatePath([$leaf, $signer], $store);
+        $this->assertFalse($res['isValid']);
+        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => str_contains($m, 'Invalid signature on certificate')));
+    }
+
+    public function testRootSelfSignatureInvalid()
+    {
+        // Create a valid chain leaf -> intermediate -> root, then corrupt the root's self-signature
+        $rootKey = Ed25519::makeKeyPair();
+        $rootBase = new Certificate(
+            key: $rootKey->toPublicKey(),
+            description: 'root_invalid_self',
+            userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'root')],
+            flags: CertificateFlagsCollection::fromList([CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]),
+            signatures: []
+        );
+        // Add an invalid (but present) self-signature using the correct KeyId
+        $invalidSelf = new Signature($rootKey->id, BinaryString::fromHex(str_repeat('00', 64)));
+        $root = $rootBase->with(signatures: [$invalidSelf]);
+
+        $interKey = Ed25519::makeKeyPair();
+        $interBase = new Certificate(
+            key: $interKey->toPublicKey(),
+            description: 'inter',
+            userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'inter')],
+            flags: CertificateFlagsCollection::fromList([CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER]),
+            signatures: []
+        );
+        $inter = $interBase->with(signatures: [Signature::make($interBase->toBinaryForSigning(), $rootKey)]);
+
+        $leafKey = Ed25519::makeKeyPair();
+        $leafBase = new Certificate(
+            key: $leafKey->toPublicKey(),
+            description: 'leaf',
+            userDescriptors: [new UserDescriptor(DescriptorType::USERNAME, 'leaf')],
+            flags: CertificateFlagsCollection::fromList([CertificateFlag::DOCUMENT_SIGNER]),
+            signatures: []
+        );
+        $leaf = $leafBase->with(signatures: [Signature::make($leafBase->toBinaryForSigning(), $interKey)]);
+
+        $chain = new Chain([$leaf, $inter, $root]);
+        $store = new TrustStore([$root]);
+
+        $result = Validator::validateChain($chain, $store);
+        $this->assertFalse($result->isValid);
+        $this->assertTrue(array_any($result->getErrorMessages(), fn($m) => str_contains($m, 'Invalid self-signature on root CA certificate')));
+    }
+
+    // Note: Catch branches that rely on exceptions during signature verification are
+    // intentionally not tested here because Signature::validate() only throws when
+    // the KeyId does not match the provided key, which cannot occur for a true
+    // self-signature selected via getSelfSignature().
+
     public function testCaCertificateMustBeSignedByIntermediateCa()
     {
         // Build: target CA signed by a signer that has only CA (not INTERMEDIATE_CA) -> invalid
@@ -531,6 +663,48 @@ class ValidatorTest extends TestCase
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
         $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag')));
+    }
+
+    public function testIntermediateCaCannotSignNonCaCertificate()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
+        $intermediate_only = $this->makeTestCert('intermediate_only', [CertificateFlag::INTERMEDIATE_CA], ['root_ca']);
+        $leaf = $this->makeTestCert('leaf', [CertificateFlag::DOCUMENT_SIGNER], ['intermediate_only']);
+
+        $chain = new Chain([
+            $leaf,
+            $intermediate_only,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Non-CA certificate must be signed by a certificate with CA flag')));
+    }
+
+    public function testCertificateWithRootCaFlagMustBeSelfSigned()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
+        $fake_root = $this->makeTestCert('fake_root', [CertificateFlag::ROOT_CA, CertificateFlag::CA], ['root_ca']);
+
+        $chain = new Chain([
+            $fake_root,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with ROOT_CA flag must be self-signed')));
     }
 
     public function testEndEntityFlagsMustBeSubsetOfSigner()

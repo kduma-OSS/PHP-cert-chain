@@ -61,9 +61,7 @@ class Validator
         
         // Add warning if multiple paths exist
         if (count($paths) > 1) {
-            // @codeCoverageIgnoreStart
             $warnings[] = new ValidationWarning('Multiple certification paths found', $certificate, 'path analysis');
-            // @codeCoverageIgnoreEnd
         }
         
         return new ValidationResult($errors, $warnings, $validPath, true);
@@ -82,10 +80,8 @@ class Validator
         $warnings = [];
 
         if (empty($path)) {
-            // @codeCoverageIgnoreStart
             $errors[] = new ValidationError('Empty certification path provided');
             return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
-            // @codeCoverageIgnoreEnd
         }
 
         // Verify that each certificate's embedded KeyId matches its public key
@@ -100,10 +96,8 @@ class Validator
         // Verify the last certificate in path is a root CA
         $rootCert = end($path);
         if (!$rootCert->isRootCA()) {
-            // @codeCoverageIgnoreStart
             $errors[] = new ValidationError('Path does not end with a root CA certificate', $rootCert, 'root CA validation');
             return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
-            // @codeCoverageIgnoreEnd
         }
         
         // Verify the root CA is in the trust store
@@ -120,10 +114,8 @@ class Validator
             // Get the signature on current certificate made by signer
             $signature = $currentCert->getSignatureByKeyId($signerCert->key->id);
             if ($signature === null) {
-                // @codeCoverageIgnoreStart
                 $errors[] = new ValidationError("Certificate is not signed by the next certificate in path", $currentCert, "signature verification at position $i");
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
-                // @codeCoverageIgnoreEnd
             }
             
             // Verify the signature
@@ -132,10 +124,8 @@ class Validator
                 $isSignatureValid = $signature->validate($dataToSign, $signerCert->key);
                 
                 if (!$isSignatureValid) {
-                    // @codeCoverageIgnoreStart
                     $errors[] = new ValidationError("Invalid signature on certificate", $currentCert, "cryptographic verification at position $i");
                     return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
-                    // @codeCoverageIgnoreEnd
                 }
             // @codeCoverageIgnoreStart
             } catch (\Exception $e) {
@@ -167,10 +157,8 @@ class Validator
                 $isSignatureValid = $rootSelfSignature->validate($dataToSign, $rootCert->key);
                 
                 if (!$isSignatureValid) {
-                    // @codeCoverageIgnoreStart
                     $errors[] = new ValidationError("Invalid self-signature on root CA certificate", $rootCert, "root CA self-signature verification");
                     return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
-                    // @codeCoverageIgnoreEnd
                 }
             // @codeCoverageIgnoreStart
             } catch (\Exception $e) {
@@ -197,9 +185,27 @@ class Validator
         // If target certificate is a CA certificate (has ROOT_CA, INTERMEDIATE_CA, or CA flags)
         $targetIsCA = $certificate->flags->isCA();
         
+        if ($certificate->flags->hasRootCA() && !$certificate->isSelfSigned()) {
+            $errors[] = new ValidationError(
+                'Certificate with ROOT_CA flag must be self-signed',
+                $certificate,
+                'certificate authority validation'
+            );
+        }
+
+        $signerHasCA = $signer->flags->hasCA();
+        $signerHasIntermediate = $signer->flags->hasIntermediateCA();
+
+        if (!$signerHasCA && !$signerHasIntermediate) {
+            $errors[] = new ValidationError(
+                'Certificate without CA flags cannot sign other certificates',
+                $signer,
+                'certificate authority validation'
+            );
+        }
+
         if ($targetIsCA) {
-            // CA certificates must be signed by a certificate with INTERMEDIATE_CA flag
-            if (!$signer->flags->hasIntermediateCA()) {
+            if (!$signerHasIntermediate) {
                 $errors[] = new ValidationError(
                     'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag',
                     $certificate,
@@ -207,9 +213,7 @@ class Validator
                 );
             }
         } else {
-            // Non-CA certificates can only be signed by certificates with CA flag
-            // ROOT_CA alone is not enough - it must also have CA flag to sign non-CA certificates
-            if (!$signer->flags->hasCA()) {
+            if (!$signerHasCA) {
                 $errors[] = new ValidationError(
                     'Non-CA certificate must be signed by a certificate with CA flag',
                     $certificate,
@@ -217,7 +221,7 @@ class Validator
                 );
             }
         }
-        
+
         return ['isValid' => empty($errors), 'errors' => $errors];
     }
     
