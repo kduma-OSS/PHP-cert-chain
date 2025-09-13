@@ -39,5 +39,6 @@
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true
-    }
+    },
+    "license": "MIT"
 }
