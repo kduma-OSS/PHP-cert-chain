@@ -247,6 +247,23 @@ class ValidatorTest extends TestCase
         $this->assertStringContainsString('KeyId does not match public key', $errorMessages[1]);
     }
 
+    public function testValidateChainRejectsCertificatesWithoutSignatures()
+    {
+        $unsigned = $this->makeTestCert('unsigned', [CertificateFlag::DOCUMENT_SIGNER], []);
+
+        $chain = new Chain([
+            $unsigned,
+        ]);
+
+        $trustStore = new TrustStore([]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+
+        $this->assertFalse($result->isValid);
+        $this->assertCount(1, $result->errors);
+        $this->assertStringContainsString('Certificate has no signatures', $result->getErrorMessages()[0]);
+    }
+
     public function testValidationResultStructure()
     {
         // Test with valid chain using makeTestCert
