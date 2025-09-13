@@ -662,7 +662,7 @@ class ValidatorTest extends TestCase
     public function testCaCertificateMustBeSignedByIntermediateCa()
     {
         // Build: target CA signed by a signer that has only CA (not INTERMEDIATE_CA) -> invalid
-        $root_ca = $this->makeTestCert('root_for_ca_target', [CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_for_ca_target']);
+        $root_ca = $this->makeTestCert('root_for_ca_target', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_for_ca_target']);
         $ca_signer_only_ca = $this->makeTestCert('ca_signer_only_ca', [CertificateFlag::CA], ['root_for_ca_target']);
         $ca_target = $this->makeTestCert('ca_target', [CertificateFlag::CA], ['ca_signer_only_ca']);
 
@@ -701,7 +701,29 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Non-CA certificate must be signed by a certificate with CA flag')));
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate without CA flag cannot sign other certificates')));
+    }
+
+    public function testIntermediateCaCannotSignCaCertificateWithoutCaFlag()
+    {
+        $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA], ['root_ca']);
+        $intermediate_only = $this->makeTestCert('intermediate_only', [CertificateFlag::INTERMEDIATE_CA], ['root_ca']);
+        $ca_target = $this->makeTestCert('ca_target', [CertificateFlag::CA], ['intermediate_only']);
+
+        $chain = new Chain([
+            $ca_target,
+            $intermediate_only,
+            $root_ca,
+        ]);
+
+        $trustStore = new TrustStore([
+            $root_ca,
+        ]);
+
+        $result = Validator::validateChain($chain, $trustStore);
+        $this->assertFalse($result->isValid);
+        $messages = $result->getErrorMessages();
+        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate without CA flag cannot sign other certificates')));
     }
 
     public function testCertificateWithRootCaFlagMustBeSelfSigned()

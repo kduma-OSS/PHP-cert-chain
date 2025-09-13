@@ -43,14 +43,14 @@ This is a PHP library implementing a certificate chain of trust system with Ed25
 The system implements a hierarchical certificate authority model using flags (`src/DTO/CertificateFlag.php`):
 
 - `ROOT_CA` (0x0001): Self-signed root certificate authorities
-- `INTERMEDIATE_CA` (0x0002): Can sign other CA certificates
-- `CA` (0x0004): Can sign end-entity (non-CA) certificates  
+- `INTERMEDIATE_CA` (0x0002): Enables signing of CA-level certificates when combined with `CA`
+- `CA` (0x0004): Required to sign any certificate; alone it can sign only end-entity (non-CA) certificates
 - `DOCUMENT_SIGNER` (0x0100): Can sign documents
 - `TEMPLATE_SIGNER` (0x0200): Can sign templates
 
 **Key Validation Rules:**
-- Only certificates with `INTERMEDIATE_CA` flag can sign other CA certificates
-- Only certificates with `CA` flag can sign non-CA certificates
+- Signers must have `CA` to issue any certificates
+- Signing a certificate with CA-level flags additionally requires `INTERMEDIATE_CA`
 - End-entity flags (`DOCUMENT_SIGNER`, `TEMPLATE_SIGNER`) must be a subset of the signer's flags
 - `ROOT_CA` certificates must be self-signed
 
