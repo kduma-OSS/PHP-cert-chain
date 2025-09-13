@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\BinaryTools\Tests;
 
@@ -14,7 +14,7 @@ class BinaryWriterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->writer = new BinaryWriter;
+        $this->writer = new BinaryWriter();
 
         $this->writer->writeByte(0x01);
         $this->writer->writeByte(0x02);

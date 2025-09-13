@@ -1,13 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\DTO\ValidationElement;
 use KDuma\CertificateChainOfTrust\DTO\ValidationError;
 use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use KDuma\CertificateChainOfTrust\DTO\ValidationWarning;
-use KDuma\BinaryTools\BinaryString;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -17,8 +17,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ValidationError::class)]
 class ValidationResultTest extends TestCase
 {
-    const string EXAMPLE_CERT = 'CERTAeNW45NAy3hEziID7lvCsfZ3EMHnQFCvqUxr07jGQXyl8wQ83TpNGnOCEGxOUYg1CCNFeGFtcGxlIEludGVybWVkaWF0ZSBDQSBDZXJ0aWZpY2F0ZQEDABhpbnRlcm1lZGlhdGUuZXhhbXBsZS5jb20DBgFY0TIpXLtX/tk79S+G+oCdPB8ECk4b15eCMYPFAuBxipqF2Nwjj847RvLaw08DPHu7/7Uh7U1QdfntbO5sJLbw2bXx6d5PaaGKpGOnqOrGBQ==';
-    const string EXAMPLE_ROOT_CERT = 'CERTAVjRMilcu1f+2Tv1L4b6gJ3HVeE/YCex4hSFvT1RjNnhtRZovhI8NjSj2rUiiOiTCxtFeGFtcGxlIFJvb3QgQ0EgQ2VydGlmaWNhdGUBAwAQcm9vdC5leGFtcGxlLmNvbQMHAVjRMilcu1f+2Tv1L4b6gJ0eZuMAzrTmI10gs8GZjruuy5tlczYYcRnV9UN4r+fCo05FEqmui2/WJVVBi2Nj+H3DaMrlRC62so24CSta31AH';
+    public const string EXAMPLE_CERT = 'CERTAeNW45NAy3hEziID7lvCsfZ3EMHnQFCvqUxr07jGQXyl8wQ83TpNGnOCEGxOUYg1CCNFeGFtcGxlIEludGVybWVkaWF0ZSBDQSBDZXJ0aWZpY2F0ZQEDABhpbnRlcm1lZGlhdGUuZXhhbXBsZS5jb20DBgFY0TIpXLtX/tk79S+G+oCdPB8ECk4b15eCMYPFAuBxipqF2Nwjj847RvLaw08DPHu7/7Uh7U1QdfntbO5sJLbw2bXx6d5PaaGKpGOnqOrGBQ==';
+    public const string EXAMPLE_ROOT_CERT = 'CERTAVjRMilcu1f+2Tv1L4b6gJ3HVeE/YCex4hSFvT1RjNnhtRZovhI8NjSj2rUiiOiTCxtFeGFtcGxlIFJvb3QgQ0EgQ2VydGlmaWNhdGUBAwAQcm9vdC5leGFtcGxlLmNvbQMHAVjRMilcu1f+2Tv1L4b6gJ0eZuMAzrTmI10gs8GZjruuy5tlczYYcRnV9UN4r+fCo05FEqmui2/WJVVBi2Nj+H3DaMrlRC62so24CSta31AH';
 
     public function testValidationErrorConstruct()
     {
@@ -116,7 +116,7 @@ class ValidationResultTest extends TestCase
         // Test with parameters
         $cert = Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_CERT));
         $rootCert = Certificate::fromBinary(BinaryString::fromBase64(self::EXAMPLE_ROOT_CERT));
-        
+
         $errors = [
             new ValidationError('Error 1'),
             new ValidationError('Error 2', $cert)

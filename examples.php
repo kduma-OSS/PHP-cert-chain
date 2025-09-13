@@ -1,5 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\Crypto\PrivateKeyPair;
 use KDuma\CertificateChainOfTrust\DTO\CertificateFlag;
@@ -7,7 +8,6 @@ use KDuma\CertificateChainOfTrust\DTO\CertificateFlagsCollection;
 use KDuma\CertificateChainOfTrust\DTO\DescriptorType;
 use KDuma\CertificateChainOfTrust\DTO\Signature;
 use KDuma\CertificateChainOfTrust\DTO\UserDescriptor;
-use KDuma\BinaryTools\BinaryString;
 
 require __DIR__ . '/vendor/autoload.php';
 

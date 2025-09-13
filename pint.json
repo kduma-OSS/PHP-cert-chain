@@ -7,7 +7,7 @@
         },
         "blank_line_after_opening_tag": false,
         "linebreak_after_opening_tag": false,
-        "declare_strict_types": false,
+        "declare_strict_types": true,
         "single_blank_line_at_eof": true,
         "no_trailing_whitespace": true,
         "no_trailing_whitespace_in_comment": true,

@@ -1,8 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust;
 
-use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use Override;
 
 readonly class Chain extends CertificatesContainer
@@ -22,38 +21,40 @@ readonly class Chain extends CertificatesContainer
     /**
      * @return Certificate[]
      */
-    public function getLeafCertificates(): array {
+    public function getLeafCertificates(): array
+    {
         $leafCertificates = [];
-        
+
         foreach ($this->certificates as $certificate) {
             // A leaf certificate is one that doesn't sign any other certificate in the chain
             $isLeaf = true;
-            
+
             foreach ($this->certificates as $otherCert) {
                 if ($certificate === $otherCert) {
                     continue;
                 }
-                
+
                 // Check if this certificate signed the other certificate
                 if ($otherCert->getSignatureByKeyId($certificate->key->id) !== null) {
                     $isLeaf = false;
                     break;
                 }
             }
-            
+
             if ($isLeaf) {
                 $leafCertificates[] = $certificate;
             }
         }
-        
+
         return $leafCertificates;
     }
 
     /**
      * @return Certificate[]
      */
-    public function getRootCertificates(): array {
-        return array_values(array_filter($this->certificates, fn(Certificate $certificate) => $certificate->isRootCA()));
+    public function getRootCertificates(): array
+    {
+        return array_values(array_filter($this->certificates, fn (Certificate $certificate) => $certificate->isRootCA()));
     }
 
 
@@ -74,7 +75,7 @@ readonly class Chain extends CertificatesContainer
         $this->buildPathsRecursive($leaf, [$leaf], $paths, []);
         return $paths;
     }
-    
+
     /**
      * Recursive helper method for building certificate paths
      *
@@ -91,33 +92,33 @@ readonly class Chain extends CertificatesContainer
             return;
         }
         // @codeCoverageIgnoreEnd
-        
+
         $visited[] = $current;
-        
+
         // If current certificate is a root CA, we've found a complete path
         if ($current->isRootCA()) {
             $paths[] = $currentPath;
             return;
         }
-        
+
         // Find all certificates that could have signed the current certificate
         $signers = [];
         foreach ($this->certificates as $potential_signer) {
             if ($potential_signer === $current) {
                 continue;
             }
-            
+
             // Check if this certificate signed the current certificate
             if ($current->getSignatureByKeyId($potential_signer->key->id) !== null) {
                 $signers[] = $potential_signer;
             }
         }
-        
+
         // If no signers found, this is a dead end
         if (empty($signers)) {
             return;
         }
-        
+
         // Recursively build paths for each signer
         foreach ($signers as $signer) {
             $newPath = $currentPath;

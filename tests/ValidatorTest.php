@@ -1,7 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\Tests;
 
+use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Certificate;
 use KDuma\CertificateChainOfTrust\Chain;
 use KDuma\CertificateChainOfTrust\Crypto\Ed25519;
@@ -16,7 +17,6 @@ use KDuma\CertificateChainOfTrust\DTO\ValidationError;
 use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use KDuma\CertificateChainOfTrust\DTO\ValidationWarning;
 use KDuma\CertificateChainOfTrust\TrustStore;
-use KDuma\BinaryTools\BinaryString;
 use KDuma\CertificateChainOfTrust\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -24,7 +24,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Validator::class)]
 class ValidatorTest extends TestCase
 {
-
     protected array $certificates = [];
     protected function setUp(): void
     {
@@ -32,7 +31,8 @@ class ValidatorTest extends TestCase
         $this->certificates = [];
     }
 
-    protected function makeTestCert(string $name, array $flags, array $signed_by): Certificate {
+    protected function makeTestCert(string $name, array $flags, array $signed_by): Certificate
+    {
         $this->certificates[$name] = [
             'key' => Ed25519::makeKeyPair(),
             'certificate' => null,
@@ -110,7 +110,7 @@ class ValidatorTest extends TestCase
     public function testValidateEmptyChain()
     {
         $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        
+
         $emptyChain = new Chain([]);
         $trustStore = new TrustStore([
             $root_ca,
@@ -135,7 +135,7 @@ class ValidatorTest extends TestCase
         $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
-        
+
         $incompleteChain = new Chain([
             $signer,
             $ca,
@@ -167,7 +167,7 @@ class ValidatorTest extends TestCase
         $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
-        
+
         $chain = new Chain([
             $signer,
             $ca,
@@ -274,7 +274,7 @@ class ValidatorTest extends TestCase
         $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
-        
+
         $validChain = new Chain([
             $signer,
             $ca,
@@ -325,7 +325,7 @@ class ValidatorTest extends TestCase
         $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
-        
+
         $chainWithMissingLink = new Chain([
             $signer, // Signer
             // Skip the CA that should sign the signer certificate
@@ -359,7 +359,7 @@ class ValidatorTest extends TestCase
         $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
-        
+
         $invalidChain = new Chain([
             $signer,
             $intermediate_ca, // Skip middle cert
@@ -376,20 +376,20 @@ class ValidatorTest extends TestCase
         $this->assertInstanceOf(ValidationResult::class, $result);
         $this->assertFalse($result->isValid);
         $this->assertCount(0, $result->validatedChain);
-        
+
         // Should have error about no complete path
         $errorMessages = $result->getErrorMessages();
         $this->assertGreaterThan(0, count($errorMessages));
-        
+
         // Find the path building error
-        $pathBuildingError = array_filter($errorMessages, fn($msg) => str_contains($msg, 'No complete certification path found'));
+        $pathBuildingError = array_filter($errorMessages, fn ($msg) => str_contains($msg, 'No complete certification path found'));
         $this->assertCount(1, $pathBuildingError);
     }
 
     public function testValidateErrorMessageFormatting()
     {
         $root_ca = $this->makeTestCert('root_ca', [CertificateFlag::ROOT_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
-        
+
         $emptyChain = new Chain([]);
         $trustStore = new TrustStore([
             $root_ca,
@@ -417,7 +417,7 @@ class ValidatorTest extends TestCase
         $intermediate_ca = $this->makeTestCert('intermediate_ca', [CertificateFlag::INTERMEDIATE_CA, CertificateFlag::DOCUMENT_SIGNER], ['root_ca']);
         $ca = $this->makeTestCert('ca', [CertificateFlag::CA, CertificateFlag::DOCUMENT_SIGNER], ['intermediate_ca']);
         $signer = $this->makeTestCert('signer', [CertificateFlag::DOCUMENT_SIGNER], ['ca']);
-        
+
         $chain = new Chain([
             $signer,
             $ca,
@@ -587,7 +587,7 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $store);
         $this->assertTrue($result->isValid);
         $this->assertGreaterThanOrEqual(1, count($result->warnings));
-        $this->assertTrue(array_any($result->getWarningMessages(), fn($m) => str_contains($m, 'Multiple certification paths found')));
+        $this->assertTrue(array_any($result->getWarningMessages(), fn ($m) => str_contains($m, 'Multiple certification paths found')));
     }
 
     public function testValidatePathEmptyArray()
@@ -595,7 +595,7 @@ class ValidatorTest extends TestCase
         $store = new TrustStore([]);
         $res = $this->invokeValidatePath([], $store);
         $this->assertFalse($res['isValid']);
-        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => $m === 'Empty certification path provided'));
+        $this->assertTrue(array_any(array_map(fn ($e) => $e->message, $res['errors']), fn ($m) => $m === 'Empty certification path provided'));
     }
 
     public function testValidatePathNotEndingWithRoot()
@@ -608,7 +608,7 @@ class ValidatorTest extends TestCase
         $store = new TrustStore([]);
         $res = $this->invokeValidatePath([$leaf, $ca], $store);
         $this->assertFalse($res['isValid']);
-        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => str_contains($m, 'Path does not end with a root CA certificate')));
+        $this->assertTrue(array_any(array_map(fn ($e) => $e->message, $res['errors']), fn ($m) => str_contains($m, 'Path does not end with a root CA certificate')));
     }
 
     public function testValidatePathMissingSignatureBetweenAdjacentCerts()
@@ -621,7 +621,7 @@ class ValidatorTest extends TestCase
         $store = new TrustStore([$root]);
         $res = $this->invokeValidatePath([$leaf, $root], $store);
         $this->assertFalse($res['isValid']);
-        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => str_contains($m, 'Certificate is not signed by the next certificate in path')));
+        $this->assertTrue(array_any(array_map(fn ($e) => $e->message, $res['errors']), fn ($m) => str_contains($m, 'Certificate is not signed by the next certificate in path')));
     }
 
     public function testValidatePathInvalidSignatureBetweenAdjacentCerts()
@@ -644,7 +644,7 @@ class ValidatorTest extends TestCase
         $store = new TrustStore([$signer]);
         $res = $this->invokeValidatePath([$leaf, $signer], $store);
         $this->assertFalse($res['isValid']);
-        $this->assertTrue(array_any(array_map(fn($e) => $e->message, $res['errors']), fn($m) => str_contains($m, 'Invalid signature on certificate')));
+        $this->assertTrue(array_any(array_map(fn ($e) => $e->message, $res['errors']), fn ($m) => str_contains($m, 'Invalid signature on certificate')));
     }
 
     public function testRootSelfSignatureInvalid()
@@ -687,7 +687,7 @@ class ValidatorTest extends TestCase
 
         $result = Validator::validateChain($chain, $store);
         $this->assertFalse($result->isValid);
-        $this->assertTrue(array_any($result->getErrorMessages(), fn($m) => str_contains($m, 'Invalid self-signature on root CA certificate')));
+        $this->assertTrue(array_any($result->getErrorMessages(), fn ($m) => str_contains($m, 'Invalid self-signature on root CA certificate')));
     }
 
     // Note: Catch branches that rely on exceptions during signature verification are
@@ -715,7 +715,7 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag')));
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag')));
     }
 
     public function testIntermediateCaCannotSignNonCaCertificate()
@@ -737,7 +737,7 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Non-CA certificate must be signed by a certificate with CA flag')));
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Non-CA certificate must be signed by a certificate with CA flag')));
     }
 
     public function testIntermediateCaCanSignCaCertificateWithoutCaFlag()
@@ -777,7 +777,7 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate with ROOT_CA flag must be self-signed')));
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate with ROOT_CA flag must be self-signed')));
     }
 
     public function testEndEntityFlagsMustBeSubsetOfSigner()
@@ -800,7 +800,7 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
 
 
         // Build: subject with DOCUMENT_SIGNER signed by signer with only CA (no end-entity flags) -> invalid
@@ -821,7 +821,7 @@ class ValidatorTest extends TestCase
         $result = Validator::validateChain($chain, $trustStore);
         $this->assertFalse($result->isValid);
         $messages = $result->getErrorMessages();
-        $this->assertTrue(array_any($messages, fn($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
+        $this->assertTrue(array_any($messages, fn ($m) => str_contains($m, 'Certificate end-entity flags must be a subset of signer')));
     }
 
     public function testRootSelfSignedAllowsAnyEndEntityFlagsForSameKey()

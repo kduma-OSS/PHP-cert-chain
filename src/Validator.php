@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust;
 
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 use KDuma\CertificateChainOfTrust\DTO\ValidationError;
 use KDuma\CertificateChainOfTrust\DTO\ValidationResult;
 use KDuma\CertificateChainOfTrust\DTO\ValidationWarning;
-use KDuma\CertificateChainOfTrust\Crypto\KeyId;
 
 /**
  * Validator enforces the policy defined in SPECIFICATION.md.
@@ -23,7 +23,7 @@ class Validator
         $errors = [];
         $warnings = [];
         $validatedChain = [];
-        
+
         // Initial validation - check if chain has certificates
         $certificate = $chain->getFirstCertificate();
         if ($certificate === null) {
@@ -43,19 +43,19 @@ class Validator
         // Build all possible paths from the first certificate to root CAs
         // SPECIFICATION.md: Chain validation algorithm — build path(s) from leaf to trusted root
         $paths = $chain->buildPaths($certificate);
-        
+
         if (empty($paths)) {
             $errors[] = new ValidationError('No complete certification path found', $certificate, 'path building');
             return new ValidationResult($errors, $warnings, $validatedChain, false);
         }
-        
+
         // Validate each path to find at least one valid path
         $validPath = null;
         $pathErrors = [];
-        
+
         foreach ($paths as $path) {
             $pathValidationResult = self::validatePath($path, $store);
-            
+
             if ($pathValidationResult['isValid']) {
                 $validPath = $path;
                 if (!empty($pathValidationResult['warnings'])) {
@@ -68,7 +68,7 @@ class Validator
                 $pathErrors[] = $pathValidationResult['errors'];
             }
         }
-        
+
         // If no valid path found, collect all errors
         if ($validPath === null) {
             $errors[] = new ValidationError('No valid certification path found', $certificate, 'chain validation');
@@ -77,19 +77,19 @@ class Validator
             }
             return new ValidationResult($errors, $warnings, $validatedChain, false);
         }
-        
+
         // Add warning if multiple paths exist
         // SPECIFICATION.md: Chain validation algorithm — multiple possible paths may exist
         if (count($paths) > 1) {
             $warnings[] = new ValidationWarning('Multiple certification paths found', $certificate, 'path analysis');
         }
-        
+
         return new ValidationResult($errors, $warnings, $validPath, true);
     }
-    
+
     /**
      * Validate a single certification path
-     * 
+     *
      * @param Certificate[] $path Path from leaf to root certificate
      * @param TrustStore $store Trust store containing trusted root CAs
      * @return array{isValid: bool, errors: ValidationError[], warnings: ValidationWarning[]}
@@ -120,48 +120,48 @@ class Validator
             $errors[] = new ValidationError('Path does not end with a root CA certificate', $rootCert, 'root CA validation');
             return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
         }
-        
+
         // Verify the root CA is in the trust store
         if ($store->getById($rootCert->key->id) === null) {
             $errors[] = new ValidationError('Root CA is not in the trust store', $rootCert, 'trust store validation');
             return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
         }
-        
+
         // Verify signature chain from leaf to root
         for ($i = 0; $i < count($path) - 1; $i++) {
             $currentCert = $path[$i];
             $signerCert = $path[$i + 1];
-            
+
             // Get the signature on current certificate made by signer
             $signature = $currentCert->getSignatureByKeyId($signerCert->key->id);
             if ($signature === null) {
                 $errors[] = new ValidationError("Certificate is not signed by the next certificate in path", $currentCert, "signature verification at position $i");
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             }
-            
+
             // Verify the signature
             try {
                 $dataToSign = $currentCert->toBinaryForSigning();
                 $isSignatureValid = $signature->validate($dataToSign, $signerCert->key);
-                
+
                 if (!$isSignatureValid) {
                     $errors[] = new ValidationError("Invalid signature on certificate", $currentCert, "cryptographic verification at position $i");
                     return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
                 }
-            // @codeCoverageIgnoreStart
+                // @codeCoverageIgnoreStart
             } catch (\Exception $e) {
                 $errors[] = new ValidationError("Signature verification failed: " . $e->getMessage(), $currentCert, "signature validation at position $i");
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             }
             // @codeCoverageIgnoreEnd
-            
+
             // Validate certificate authority rules
             $authorityValidation = self::validateCertificateAuthority($currentCert, $signerCert);
             if (!$authorityValidation['isValid']) {
                 $errors = array_merge($errors, $authorityValidation['errors']);
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             }
-            
+
             // Validate end-entity flag inheritance
             $inheritanceValidation = self::validateEndEntityFlagInheritance($currentCert, $signerCert);
             if (!$inheritanceValidation['isValid']) {
@@ -169,32 +169,32 @@ class Validator
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             }
         }
-        
+
         // Verify root certificate's self-signature if it exists
         $rootSelfSignature = $rootCert->getSelfSignature();
         if ($rootSelfSignature !== null) {
             try {
                 $dataToSign = $rootCert->toBinaryForSigning();
                 $isSignatureValid = $rootSelfSignature->validate($dataToSign, $rootCert->key);
-                
+
                 if (!$isSignatureValid) {
                     $errors[] = new ValidationError("Invalid self-signature on root CA certificate", $rootCert, "root CA self-signature verification");
                     return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
                 }
-            // @codeCoverageIgnoreStart
+                // @codeCoverageIgnoreStart
             } catch (\Exception $e) {
                 $errors[] = new ValidationError("Root CA self-signature verification failed: " . $e->getMessage(), $rootCert, "root CA signature validation");
                 return ['isValid' => false, 'errors' => $errors, 'warnings' => $warnings];
             }
             // @codeCoverageIgnoreEnd
         }
-        
+
         return ['isValid' => true, 'errors' => $errors, 'warnings' => $warnings];
     }
-    
+
     /**
      * Validate that a signer certificate has proper authority to sign a target certificate
-     * 
+     *
      * @param Certificate $certificate The certificate being signed
      * @param Certificate $signer The certificate doing the signing
      * @return array{isValid: bool, errors: ValidationError[]}
@@ -202,11 +202,11 @@ class Validator
     private static function validateCertificateAuthority(Certificate $certificate, Certificate $signer): array
     {
         $errors = [];
-        
+
         // If target certificate is a CA certificate (has ROOT_CA, INTERMEDIATE_CA, or CA flags)
         // See SPECIFICATION.md: "Roles and combinations" and "Signing rules matrix"
         $targetIsCA = $certificate->flags->isCA();
-        
+
         // SPECIFICATION.md: ROOT_CA must be self‑signed (see "Roles and combinations")
         if ($certificate->flags->hasRootCA() && !$certificate->isSelfSigned()) {
             $errors[] = new ValidationError(
@@ -251,10 +251,10 @@ class Validator
 
         return ['isValid' => empty($errors), 'errors' => $errors];
     }
-    
+
     /**
      * Validate that a certificate's end-entity flags inherit properly from its signer
-     * 
+     *
      * @param Certificate $certificate The certificate being signed
      * @param Certificate $signer The certificate doing the signing
      * @return array{isValid: bool, errors: ValidationError[]}
@@ -262,18 +262,18 @@ class Validator
     private static function validateEndEntityFlagInheritance(Certificate $certificate, Certificate $signer): array
     {
         $errors = [];
-        
+
         // ROOT_CA certificates (self-signed) can have any end-entity flags
         if ($signer->isRootCA() && $certificate->key->id->equals($signer->key->id)) {
             return ['isValid' => true, 'errors' => $errors];
         }
-        
+
         // Get end-entity flags for both certificates
         // SPECIFICATION.md: "End‑Entity Inheritance Matrix" and
         // "End‑entity flags (non‑CA) inheritance"
         $certificateEndEntityFlags = $certificate->flags->getEndEntityFlags();
         $signerEndEntityFlags = $signer->flags->getEndEntityFlags();
-        
+
         // Certificate's end-entity flags must be a subset of signer's end-entity flags
         // SPECIFICATION.md: Subject.EndEntity ⊆ Issuer.EndEntity
         if (!$certificateEndEntityFlags->isSubsetOf($signerEndEntityFlags)) {
@@ -284,7 +284,7 @@ class Validator
                 'end-entity flag inheritance validation'
             );
         }
-        
+
         return ['isValid' => empty($errors), 'errors' => $errors];
     }
 }
