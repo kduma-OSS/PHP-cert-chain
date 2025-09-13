@@ -161,9 +161,9 @@ The library uses a flexible flag system for maximum reusability:
 
 ## 📚 Documentation
 
-- **[Documentation](https://opensource.duma.sh/libraries/php/cert-chain#table-of-contents)** - Complete API documentation and advanced usage
+- **[Documentation](https://opensource.duma.sh/libraries/php/cert-chain#php-certificate-chain-of-trust-complete-documentation)** - Complete API documentation and advanced usage
 - **[examples.php](examples.php)** - Comprehensive examples and use cases
-- **[Specification](https://opensource.duma.sh/libraries/php/cert-chain#common-rules)** - Binary format and protocol specification
+- **[Specification](https://opensource.duma.sh/libraries/php/cert-chain#simple-certificate-specification-complete)** - Binary format and protocol specification
 
 ## 🔧 Advanced Features
 
