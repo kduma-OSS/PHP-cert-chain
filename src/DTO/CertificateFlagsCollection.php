@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\DTO;
 
-class  CertificateFlagsCollection
+class CertificateFlagsCollection
 {
     public array $flags {
         get {
@@ -116,7 +116,7 @@ class  CertificateFlagsCollection
         $parts = array_map(function (CertificateFlag $flag) {
             return $flag->toString();
         }, $this->flags);
-        
+
         return implode(' | ', $parts) ?: '';
     }
 }

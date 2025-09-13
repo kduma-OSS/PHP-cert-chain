@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\Crypto;
 
@@ -8,14 +8,13 @@ use KDuma\BinaryTools\BinaryWriter;
 
 readonly class PrivateKeyPair extends PublicKey
 {
-    const string MAGIC = "\x3e\xb8\xaf\x6a\xd7\x8a";
+    public const string MAGIC = "\x3e\xb8\xaf\x6a\xd7\x8a";
 
     public function __construct(
         KeyId $id,
         BinaryString $publicKey,
         public BinaryString $privateKey,
-    )
-    {
+    ) {
         parent::__construct($id, $publicKey);
     }
 
@@ -72,7 +71,7 @@ readonly class PrivateKeyPair extends PublicKey
             throw new \InvalidArgumentException('Failed to parse PrivateKey: ' . $e->getMessage());
         }
 
-        if($reader->has_more_data) {
+        if ($reader->has_more_data) {
             throw new \InvalidArgumentException('Extra data found after parsing PrivateKey');
         }
 

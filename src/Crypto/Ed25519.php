@@ -1,9 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\Crypto;
 
 use KDuma\BinaryTools\BinaryString;
-use SodiumException;
 
 class Ed25519
 {

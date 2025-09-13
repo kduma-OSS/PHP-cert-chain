@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(DescriptorType::class)]
 class DescriptorTypeTest extends TestCase
 {
-
     public function testFromByte()
     {
         $this->assertEquals(DescriptorType::USERNAME, DescriptorType::fromByte(0x01));

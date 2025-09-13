@@ -1,14 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\DTO;
 
-
-use KDuma\CertificateChainOfTrust\Crypto\KeyId;
-use KDuma\CertificateChainOfTrust\Crypto\PrivateKeyPair;
-use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
 use KDuma\BinaryTools\BinaryReader;
 use KDuma\BinaryTools\BinaryString;
 use KDuma\BinaryTools\BinaryWriter;
+use KDuma\CertificateChainOfTrust\Crypto\KeyId;
+use KDuma\CertificateChainOfTrust\Crypto\PrivateKeyPair;
+use KDuma\CertificateChainOfTrust\Crypto\PublicKey;
 
 readonly class Signature
 {
@@ -33,7 +32,7 @@ readonly class Signature
     public function toBinary(bool $fixed_length = false): BinaryString
     {
         $writer = new BinaryWriter();
-        if($fixed_length) {
+        if ($fixed_length) {
             if ($this->keyId->size() !== 16) {
                 throw new \InvalidArgumentException('KeyId must be 16 bytes for fixed length encoding');
             }
@@ -56,7 +55,7 @@ readonly class Signature
         $initialPosition = $reader->position;
 
         try {
-            if($fixed_length) {
+            if ($fixed_length) {
                 $keyId = $reader->readBytes(16);
                 $signature = $reader->readBytes(64);
             } else {

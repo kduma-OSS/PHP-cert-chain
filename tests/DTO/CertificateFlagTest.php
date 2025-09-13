@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace KDuma\CertificateChainOfTrust\Tests\DTO;
 
@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CertificateFlag::class)]
 class CertificateFlagTest extends TestCase
 {
-
     public function testToString()
     {
         $this->assertEquals('Root CA', CertificateFlag::ROOT_CA->toString());
