@@ -126,7 +126,7 @@ Notes
 5. For each child/parent pair (issuer = parent):
     - Issuer must have `CA`.
     - If the child is CA‑level (has any of `ROOT_CA`, `INTERMEDIATE_CA`, `CA`): issuer must also have `INTERMEDIATE_CA`.
-   - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
+    - End‑entity inheritance: For each end‑entity bit (`0x0100`, `0x0200`), if child has it, issuer must also have it (`Child.EndEntity ⊆ Issuer.EndEntity`).
 6. A certificate with `ROOT_CA` must be self‑signed and present in the trust store.
 
 ---

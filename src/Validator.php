@@ -204,30 +204,20 @@ class Validator
         $signerHasCA = $signer->flags->hasCA();
         $signerHasIntermediate = $signer->flags->hasIntermediateCA();
 
-        if (!$signerHasCA && !$signerHasIntermediate) {
+        if (!$signerHasCA) {
             $errors[] = new ValidationError(
-                'Certificate without CA flags cannot sign other certificates',
+                'Certificate without CA flag cannot sign other certificates',
                 $signer,
                 'certificate authority validation'
             );
         }
 
-        if ($targetIsCA) {
-            if (!$signerHasIntermediate) {
-                $errors[] = new ValidationError(
-                    'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag',
-                    $certificate,
-                    'certificate authority validation'
-                );
-            }
-        } else {
-            if (!$signerHasCA) {
-                $errors[] = new ValidationError(
-                    'Non-CA certificate must be signed by a certificate with CA flag',
-                    $certificate,
-                    'certificate authority validation'
-                );
-            }
+        if ($targetIsCA && !$signerHasIntermediate) {
+            $errors[] = new ValidationError(
+                'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag',
+                $certificate,
+                'certificate authority validation'
+            );
         }
 
         return ['isValid' => empty($errors), 'errors' => $errors];
