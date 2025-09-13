@@ -188,10 +188,10 @@ class Validator
         $targetIsCA = $certificate->flags->isCA();
         
         if ($targetIsCA) {
-            // Only INTERMEDIATE_CA and ROOT_CA can sign CA certificates
-            if (!$signer->flags->hasIntermediateCA() && !$signer->flags->hasRootCA()) {
+            // CA certificates must be signed by a certificate with INTERMEDIATE_CA flag
+            if (!$signer->flags->hasIntermediateCA()) {
                 $errors[] = new ValidationError(
-                    'Certificate with CA flags can only be signed by INTERMEDIATE_CA or ROOT_CA',
+                    'Certificate with CA flags must be signed by a certificate with INTERMEDIATE_CA flag',
                     $certificate,
                     'certificate authority validation'
                 );
