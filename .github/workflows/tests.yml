@@ -30,6 +30,11 @@ jobs:
       - name: Install dependencies
         uses: ramsey/composer-install@v3
 
+      - name: Check code style
+        run: composer lint
+        continue-on-error: true
+        id: lint
+
       - name: Run tests with coverage
         run: ./vendor/bin/phpunit --coverage-clover=coverage/clover.xml --coverage-html=coverage/html --coverage-text
         continue-on-error: true
@@ -76,11 +81,19 @@ jobs:
           script: |
             const fs = require('fs');
 
+            let lintStatus = '${{ steps.lint.outcome }}';
             let testStatus = '${{ steps.tests.outcome }}';
             let coveragePercentage = '${{ steps.coverage.outputs.percentage }}';
             let coverageFailed = '${{ steps.coverage.outputs.coverage_failed }}';
 
             let message = `## 🔍 Test Results - PHP ${{ matrix.php }}\n\n`;
+
+            if (lintStatus === 'failure') {
+              message += `❌ **Code Style Check Failed**\n\n`;
+              message += `Code style violations found. Please run \`composer fix\` to automatically fix them.\n\n`;
+            } else {
+              message += `✅ **Code Style Check Passed**\n\n`;
+            }
 
             if (testStatus === 'failure') {
               message += `❌ **Tests Failed**\n\n`;
@@ -135,6 +148,12 @@ jobs:
           name: coverage-reports-php${{ matrix.php }}
           path: coverage/
           retention-days: 30
+
+      - name: Fail on lint errors
+        if: steps.lint.outcome == 'failure'
+        run: |
+          echo "❌ Build failed due to code style violations"
+          exit 1
 
       - name: Fail on coverage < 100%
         if: steps.coverage.outputs.coverage_failed == 'true'
